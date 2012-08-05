@@ -25,29 +25,7 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 public class Deploy {
-	 public static class ExclamationBolt extends BaseRichBolt {
-	        OutputCollector _collector;
-
-	        @Override
-	        public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-	            _collector = collector;
-	        }
-
-	        @Override
-	        public void execute(Tuple tuple) {
-	        	Instance inst = (Instance)tuple.getValue(0);
-	        	System.out.println(inst);
-	        	
-	            _collector.ack(tuple);
-	        }
-
-	        @Override
-	        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-	            declarer.declare(new Fields("word"));
-	        }
-
-
-	    }
+	 
 	public static void main(String[] args) throws AlreadyAliveException, InvalidTopologyException
 	{
 			//System.setProperty("storm.jar", "/home/bsp/stormmoa.jar");
@@ -63,8 +41,8 @@ public class Deploy {
 	        AMQPSpout spout = new AMQPSpout(host, port, username, password, vhost, queue, new InstanceScheme());
 	        builder.setSpout("instances", spout);
 	        // consume instances
-	        builder.setBolt("exclaim1", new ExclamationBolt(), 3)
-	                .shuffleGrouping("instances");
+	        //builder.setBolt("exclaim1", new ExclamationBolt(), 3)
+	          //      .shuffleGrouping("instances");
 	                
 	        Config conf = new Config();
 	        conf.setDebug(true);

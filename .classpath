@@ -2,60 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/eclipse"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/moa"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/weka"/>
-	<classpathentry kind="var" path="STORM_HOME/asm-3.2.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/carbonite-1.0.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/clj-time-0.4.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/clojure-1.4.0.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/clout-0.4.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/commons-codec-1.4.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/commons-exec-1.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/commons-fileupload-1.2.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/commons-io-1.4.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/commons-lang-2.5.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/compojure-0.6.4.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/core.incubator-0.1.0.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/curator-client-1.0.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/curator-framework-1.0.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/guava-10.0.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/hiccup-0.3.6.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/httpclient-4.1.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/httpcore-4.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/jetty-6.1.26.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/jetty-util-6.1.26.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/jline-0.9.94.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/joda-time-2.0.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/json-simple-1.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/jsr305-1.3.9.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/junit-3.8.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/jzmq-2.1.0.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/kryo-1.04.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/libthrift7-0.7.0.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/log4j-1.2.16.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/math.numeric-tower-0.0.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/minlog-1.2.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/reflectasm-1.01.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/ring-core-0.3.10.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/ring-jetty-adapter-0.3.11.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/ring-servlet-0.3.11.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/servlet-api-2.5-20081211.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/servlet-api-2.5.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/slf4j-api-1.5.8.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/slf4j-log4j12-1.5.8.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/snakeyaml-1.9.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/tools.cli-0.2.1.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/tools.logging-0.2.3.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/tools.macro-0.1.0.jar"/>
-	<classpathentry kind="var" path="STORM_HOME/zookeeper-3.3.3.jar"/>
-	<classpathentry kind="lib" path="/home/bsp/storm-0.7.4/storm-0.7.4.jar"/>
-	<classpathentry kind="lib" path="/home/bsp/work/rabbitmq-java-client-bin-2.8.4/commons-cli-1.1.jar"/>
-	<classpathentry kind="lib" path="/home/bsp/work/rabbitmq-java-client-bin-2.8.4/commons-io-1.2.jar"/>
-	<classpathentry kind="lib" path="/home/bsp/work/rabbitmq-java-client-bin-2.8.4/junit.jar"/>
-	<classpathentry kind="lib" path="/home/bsp/work/rabbitmq-java-client-bin-2.8.4/rabbitmq-client.jar"/>
-	<classpathentry kind="lib" path="/home/bsp/work/rabbitmq-java-client-bin-2.8.4/rabbitmq-client-tests.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/storm-amqp-spout"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>

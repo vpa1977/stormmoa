@@ -22,7 +22,7 @@ public class InstanceScheme  implements Scheme {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	@Override
+	
 	public List<Object> deserialize(byte[] ser) {
 		ArrayList<Object> result = new ArrayList<Object>();
 		try {
@@ -37,7 +37,7 @@ public class InstanceScheme  implements Scheme {
 		return result;
 	}
 
-	@Override
+	
 	public Fields getOutputFields() {
 		return m_fields;
 	}
