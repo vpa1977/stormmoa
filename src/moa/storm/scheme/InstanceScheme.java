@@ -15,7 +15,7 @@ public class InstanceScheme  implements Scheme {
 
 	public InstanceScheme()
 	{
-		m_fields = new Fields("instance");
+		m_fields = new Fields("instance", "instance_tag");
 	}
 	/**
 	 * 
@@ -29,6 +29,7 @@ public class InstanceScheme  implements Scheme {
 			ObjectInputStream oStream = new ObjectInputStream(new ByteArrayInputStream(ser));
 			Object instance = oStream.readObject();
 			result.add(instance);
+			result.add("stream");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
