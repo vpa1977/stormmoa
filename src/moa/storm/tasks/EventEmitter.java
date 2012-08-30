@@ -2,8 +2,12 @@ package moa.storm.tasks;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import moa.classifiers.Classifier;
 import moa.core.Measurement;
@@ -26,11 +30,19 @@ import storm.trident.Stream;
 import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import storm.trident.fluent.GroupedStream;
+import storm.trident.fluent.IAggregatableStream;
+import storm.trident.operation.Function;
 import storm.trident.operation.ReducerAggregator;
+import storm.trident.operation.TridentCollector;
+import storm.trident.operation.TridentOperationContext;
 import storm.trident.operation.builtin.Debug;
 import storm.trident.operation.builtin.MapGet;
 import storm.trident.spout.RichSpoutBatchExecutor;
+import storm.trident.state.BaseQueryFunction;
+import storm.trident.state.QueryFunction;
+import storm.trident.state.State;
 import storm.trident.state.StateFactory;
+import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.testing.MemoryMapState;
 import storm.trident.tuple.TridentTuple;
 import trident.memcached.MemcachedState;
@@ -65,16 +77,57 @@ public class EventEmitter extends MainTask {
             new MemCacheDaemon<LocalCacheElement>();
 	
 	private static void startLocalMemcacheInstance(int port) {
-        System.out.println("Starting local memcache");
-        CacheStorage<Key, LocalCacheElement> storage =
-                ConcurrentLinkedHashMap.create(
+        
+        if (!daemon.isRunning())
+        {
+        	System.out.println("Starting local memcache");
+        	CacheStorage<Key, LocalCacheElement> storage =
+        			ConcurrentLinkedHashMap.create(
                         ConcurrentLinkedHashMap.EvictionPolicy.FIFO, 100, 1024*500);
-        daemon.setCache(new CacheImpl(storage));
-        daemon.setAddr(new InetSocketAddress("localhost", port));
-        daemon.start();
+        	daemon.setCache(new CacheImpl(storage));
+        	daemon.setAddr(new InetSocketAddress("localhost", port));
+        	daemon.start();
+        }
     }
+	
+	class MOAQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<Long>, Long> implements Serializable
+	{
 
-	class EventProcessor {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+
+
+		public void execute(TridentTuple tuple, Long result,
+				TridentCollector collector) {
+			ArrayList<Object> out = new ArrayList<Object>();
+			out.add(result);
+			collector.emit(out);
+		}
+
+		public List<Long> batchRetrieve(ReadOnlySnapshottable<Long> state,
+				List<TridentTuple> args) {
+			Long lol = state.get();
+			if (lol == null)
+				lol = new Long(0);
+			ArrayList<Long> list = new ArrayList<Long>();
+			for (TridentTuple t : args)
+			{
+				list.add( new Long(lol));
+			}
+			return list;
+		}
+		
+	}
+
+	class EventProcessor implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		public EventProcessor(LocalDRPC drpc) {
 			
 			LocalCluster cluster = new LocalCluster();
@@ -85,7 +138,7 @@ public class EventEmitter extends MainTask {
 			Config conf = new Config();
 			// conf.setDebug(true);
 			conf.setMaxTaskParallelism(1);
-			conf.put(RichSpoutBatchExecutor.MAX_BATCH_SIZE_CONF, 1);
+			//conf.put(RichSpoutBatchExecutor.MAX_BATCH_SIZE_CONF, 1);
 			
 			TridentTopology topology = new TridentTopology();
 			
@@ -107,18 +160,38 @@ public class EventEmitter extends MainTask {
 			instanceStream = instanceStream.each(scheme.getOutputFields(),
 					new Debug());
 			
-			GroupedStream grpStream = instanceStream.groupBy(new Fields("instance_tag"));
+		/*	GroupedStream grpStream = instanceStream.groupBy(new Fields("instance_tag"));
+			IAggregatableStream grpStream2 = grpStream.each(scheme.getOutputFields(), new Function(){
+
+				public void prepare(Map conf, TridentOperationContext context) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void cleanup() {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void execute(TridentTuple tuple,
+						TridentCollector collector) {
+					
+					collector.emit(tuple.getValues());
+					
+				}
+				
+			}, new Fields() );*/
 			
 			EvaluationAggregator evaluator = new EvaluationAggregator(
 					evaluatorOption, learnerOption, streamOption);
 
-			TridentState performanceMetrics = grpStream
-					.persistentAggregate(memcached, evaluator, new Fields("accuracy"));
+			TridentState performanceMetrics = instanceStream
+					.persistentAggregate(memcached, new Fields("instance"), evaluator, new Fields("accuracy"));
 
 			performanceMetrics.parallelismHint(1);
 
 			Stream queryStream = topology.newDRPCStream("stats", drpc);
-			queryStream.stateQuery(performanceMetrics, new MapGet(), new Fields("accuracy"));
+			queryStream.stateQuery(performanceMetrics, new MOAQueryFunction(), new Fields("accuracy"));
 
 			cluster.submitTopology("moatest", conf, topology.build());
 		}
