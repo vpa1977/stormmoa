@@ -2,7 +2,10 @@ package moa.storm.tasks;
 
 import java.io.Serializable;
 
+import weka.core.Instance;
+
 import moa.classifiers.Classifier;
+import moa.evaluation.ClassificationPerformanceEvaluator;
 
 public class LearnerWrapper implements Serializable{
 	
@@ -16,6 +19,7 @@ public class LearnerWrapper implements Serializable{
 	}
 	public void setClassifier(Classifier classifier) {
 		this.classifier = classifier;
+		this.instancesProcessed = 0;
 	}
 	public long getInstancesProcessed() {
 		return instancesProcessed;
@@ -25,6 +29,19 @@ public class LearnerWrapper implements Serializable{
 	{
 		instancesProcessed++;
 	}
+	public void setEvaluator(ClassificationPerformanceEvaluator value) {
+		this.evaluator = value;
+	}
+	
 	private Classifier classifier;
+	
+	private ClassificationPerformanceEvaluator evaluator;
+	
 	private long instancesProcessed;
+
+	public void addEvaluation(Object prediction, Instance inst) {
+		evaluator.addResult(inst, (double[])prediction);
+	}
+	
+	
 }

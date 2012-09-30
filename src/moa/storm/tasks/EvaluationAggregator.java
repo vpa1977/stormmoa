@@ -2,11 +2,12 @@ package moa.storm.tasks;
 
 import moa.classifiers.Classifier;
 import moa.evaluation.ClassificationPerformanceEvaluator;
+import storm.trident.operation.CombinerAggregator;
 import storm.trident.operation.ReducerAggregator;
 import storm.trident.tuple.TridentTuple;
 import weka.core.Instance;
 
-class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
+public class EvaluationAggregator implements ReducerAggregator<LearnerWrapper> {
 	/**
 	 * 
 	 */
@@ -17,8 +18,9 @@ class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
 	/** 
 	 * 
 	 * @param c - wrapper for the classifier/evaluator pair
+	 * @param learn - reducer mode - learn/evaluate
 	 */
-	public LearnerAggregator( LearnerWrapper c)
+	public EvaluationAggregator( LearnerWrapper c)
 	{
 		learner = c;
 	}
@@ -30,11 +32,11 @@ class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
 	public LearnerWrapper reduce(LearnerWrapper curr, TridentTuple tuple) {
 		if (curr == null)
 			curr = init();
-		Object value = tuple.getValue(0);
+		Object prediction = tuple.getValue(0);
+		Object value = tuple.getValue(1);
 		if (value instanceof Instance){
-			Instance trainInst = (Instance) value;
-			curr.getClassifier().trainOnInstance(trainInst);
-			curr.increaseInstancesProcessed();
+			Instance inst = (Instance) value;
+			curr.addEvaluation( prediction ,inst);
 		}
 		else 
 		if (value instanceof Classifier)
@@ -50,6 +52,6 @@ class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
 		{
 			throw new RuntimeException("Unknown tuple type");
 		}
-		return learner;
+		return curr;
 	}
 }

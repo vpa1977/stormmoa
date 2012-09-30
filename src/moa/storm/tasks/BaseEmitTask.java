@@ -35,7 +35,7 @@ public abstract class BaseEmitTask extends MainTask {
 	public StringOption amqpHostOption = new StringOption("ampqHost", 'h',
 			"AMQP Host", "localhost");
 
-	public IntOption amqpPortOption = new IntOption("amqpPort", 'i',
+	public IntOption amqpPortOption = new IntOption("amqpPort", 'I',
 			"AMQP Port", 5672, 0, Integer.MAX_VALUE);
 
 	public StringOption amqpUsernameOption = new StringOption("amqpUsername",
@@ -102,11 +102,11 @@ public abstract class BaseEmitTask extends MainTask {
 	 * @param inst
 	 * @throws IOException 
 	 */
-	public void send(Instance instance) throws IOException
+	public void send(Object data) throws IOException
 	{
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		ObjectOutputStream os = new ObjectOutputStream(bos);
-		os.writeObject(instance);
+		os.writeObject(data);
 		os.close();
 		amqpChannel.basicPublish(amqpExchangeOption.getValue(), "",
 				null, bos.toByteArray());
@@ -118,10 +118,10 @@ public abstract class BaseEmitTask extends MainTask {
 	 * @param topology
 	 * @return
 	 */
-	protected Stream createStream(TridentTopology topology)
+	protected Stream createStream(String name, TridentTopology topology)
 	{
 		SharedQueueWithBinding queue = new SharedQueueWithBinding(
-				"moa-events", "moa", "#");
+				name, "moa", "#");
 		String host = "localhost";
 		int port = 5672; // default ampq host
 		String vhost = "/";

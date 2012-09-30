@@ -20,7 +20,6 @@ public class StatQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<L
 	public List<LearnerWrapper> batchRetrieve(ReadOnlySnapshottable<LearnerWrapper> state,
 			List<TridentTuple> args) {
 		LearnerWrapper theClassifier = state.get();
-		
 		ArrayList<LearnerWrapper> list = new ArrayList<LearnerWrapper>();
 		for (TridentTuple t : args)
 		{
@@ -33,9 +32,11 @@ public class StatQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<L
 	public void execute(TridentTuple tuple, LearnerWrapper result,
 			TridentCollector collector) {
 		ArrayList<Object> out = new ArrayList<Object>();
-		out.add( new Long(result.getInstancesProcessed()));
+		if (result != null)
+			out.add( new Long(result.getInstancesProcessed()));
+		else
+			out.add( new Long(0));
 		collector.emit(out);
-		
 	}
 
 

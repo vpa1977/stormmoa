@@ -23,6 +23,7 @@ import trident.memcached.MemcachedState;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
+import backtype.storm.StormSubmitter;
 import backtype.storm.generated.DRPCRequest;
 import backtype.storm.tuple.Fields;
 
@@ -66,24 +67,23 @@ public class TridentLearnModel extends BaseEmitTask {
 	@Override
 	protected Object doMainTask(TaskMonitor monitor, ObjectRepository repository) {
 		// connect to the
-		String topologyName = "moa_learn ";
+		String topologyName = amqpQueueOption.getValue();
 		try {
 			monitor.setCurrentActivity("Connecting to AMQP Broker", 1.0);
 			monitor.setCurrentActivityFractionComplete(0);
 			
 			connect();
-			LocalDRPC drpc = LocalStormSupport.drpc();
-			LocalCluster cluster = LocalStormSupport.localCluster();
-			
+			LocalDRPC drpc = MoaStormSupport.drpc();
 			
 			Classifier learner = (Classifier) getPreparedClassOption(this.learnerOption);
 			InstanceStream stream = (InstanceStream) getPreparedClassOption(this.streamOption);
 			learner.setModelContext(stream.getHeader());
 			
-			// + topology setup
-				StateFactory factory = LocalStormSupport.stateFactory(); 
+			try {
+				// nb: drpc == null - remote mode drpc. 
+				StateFactory factory = MoaStormSupport.stateFactory(); 
 				TridentTopology topology = new TridentTopology();
-				Stream instanceStream = createStream(topology);
+				Stream instanceStream = createStream(amqpQueueOption.getValue(),topology);
 				TridentState classifierState = createLearner(factory, learner, instanceStream);
 				Stream queryStream = topology.newDRPCStream("classifier", drpc);
 				queryStream.stateQuery(classifierState, new ClassifierQueryFunction(), new Fields("classifier"));
@@ -94,10 +94,14 @@ public class TridentLearnModel extends BaseEmitTask {
 				Config conf = new Config();
 				// conf.setDebug(true);
 				conf.setMaxTaskParallelism(1);
-				cluster.submitTopology(topologyName, conf, topology.build());
+				
+				MoaStormSupport.submit(topologyName, conf, topology.build());
 			// - topology setup
-			
-			
+			}
+			catch (Throwable t)
+			{
+				send( learner); // try to update learner
+			}
 			
 			// +send instances into queue
 	        int numPasses = this.numPassesOption.getValue();
@@ -169,7 +173,7 @@ public class TridentLearnModel extends BaseEmitTask {
 		}
 		finally {
 			// @TODO reconfigure with new classifier.
-			LocalStormSupport.localCluster().killTopology(topologyName);
+			//LocalStormSupport.localCluster().killTopology(topologyName);
 		}
 		return null;
 	}

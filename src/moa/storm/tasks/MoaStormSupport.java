@@ -2,6 +2,7 @@ package moa.storm.tasks;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Map;
 
 import storm.trident.state.StateFactory;
 import trident.memcached.MemcachedState;
@@ -15,8 +16,10 @@ import com.thimbleware.jmemcached.storage.hash.ConcurrentLinkedHashMap;
 
 import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
+import backtype.storm.StormSubmitter;
+import backtype.storm.generated.StormTopology;
 
-public class LocalStormSupport {
+public class MoaStormSupport {
 	private static LocalDRPC LOCAL_DRPC = new LocalDRPC();
 	private static LocalCluster LOCAL_CLUSTER = new LocalCluster();
 	
@@ -30,6 +33,11 @@ public class LocalStormSupport {
 		return LOCAL_CLUSTER;
 	}
 	
+	public static void submit(String name, Map conf, StormTopology topology)
+	{
+		localCluster().submitTopology(name, conf, topology);
+		
+	}
 	
 	private static final MemCacheDaemon<LocalCacheElement> daemon =
             new MemCacheDaemon<LocalCacheElement>();
