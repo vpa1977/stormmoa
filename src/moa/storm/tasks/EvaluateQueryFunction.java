@@ -1,7 +1,9 @@
 package moa.storm.tasks;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,9 +12,12 @@ import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
+import moa.classifiers.Classifier;
+
 import storm.trident.operation.Function;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
+import storm.trident.operation.builtin.MapGet;
 import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
@@ -26,10 +31,31 @@ public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottab
 			TridentCollector collector) {
 		Object value = tuple.getValue(0);
 		
-		List<Object> objs = new ArrayList<Object>();
-		objs.add( result.getClassifier().getVotesForInstance( (Instance)value));
-		objs.add( value );
-		collector.emit(objs);
+		byte[] b = DatatypeConverter.parseBase64Binary(String.valueOf(value));
+        ObjectInputStream is;
+        Object serializedObject = null;
+		try {
+			is = new ObjectInputStream( new ByteArrayInputStream(b));
+			serializedObject = is.readObject();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		if (result != null)
+		{
+			List<Object> objs = new ArrayList<Object>();
+			objs.add( result.getClassifier().getVotesForInstance( (Instance)serializedObject));
+			objs.add( value );
+			collector.emit(objs);
+		}
+
+
+		
 	}
 
 	public List<LearnerWrapper> batchRetrieve(ReadOnlySnapshottable<LearnerWrapper> state,

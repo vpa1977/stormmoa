@@ -24,12 +24,21 @@ class ClassifierQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<Le
 		try {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			ObjectOutputStream os = new ObjectOutputStream(bos);
+			if (result != null) {
 			os.writeObject(result.getClassifier());
 			byte[] bytes = bos.toByteArray();
 			String tmp =DatatypeConverter.printBase64Binary(bytes);
 			ArrayList<Object> out = new ArrayList<Object>();
 			out.add(tmp);
 			collector.emit(out);
+			}
+			else
+			{
+				ArrayList<Object> out = new ArrayList<Object>();
+				out.add("");
+				collector.emit(out);
+			}
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

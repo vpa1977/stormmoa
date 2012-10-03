@@ -92,12 +92,14 @@ public class TridentEvaluateModel extends BaseEmitTask {
 				Stream instanceStream = createStream(amqpQueueOption.getValue(),topology);
 				TridentState classifierState = instanceStream.persistentAggregate(factory, new Fields("instance"), 
 						new LearnerAggregator(wrapper), new Fields("classifier"));
+				Stream queryStream = topology.newDRPCStream("classifier", drpc);
+					queryStream.stateQuery(classifierState, new ClassifierQueryFunction(), new Fields("classifier"));
 				
 				topology.newDRPCStream("evaluate", drpc).
-						stateQuery(classifierState, new Fields("instance"), new EvaluateQueryFunction(), new Fields("prediction"));
+						stateQuery(classifierState,new Fields("args"), new EvaluateQueryFunction(), new Fields("prediction"));
 				
 				Config conf = new Config();
-				// conf.setDebug(true);
+				conf.setDebug(true);
 				//conf.setMaxTaskParallelism(1);
 				
 				MoaStormSupport.submit(topologyName, conf, topology.build());
@@ -111,7 +113,8 @@ public class TridentEvaluateModel extends BaseEmitTask {
 			// update model
 			send(model);
 			// update evaluator
-			send(evaluator);
+			waitClusterModel(drpc);
+			//send(evaluator);
 			
 			
 			// attempt to query stuff.
@@ -199,5 +202,19 @@ public class TridentEvaluateModel extends BaseEmitTask {
 		
         return new LearningEvaluation(evaluator.getPerformanceMeasurements());	
       }
+
+	private void waitClusterModel(LocalDRPC drpc) {
+			String result ="";
+			while ("".equals(result ) || ("[[\"\",\"\"]]".equals(result)) )
+			{
+				result = drpc.execute("classifier", "");
+			    try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	}
 
 }
