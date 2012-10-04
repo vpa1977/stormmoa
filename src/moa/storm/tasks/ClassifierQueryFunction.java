@@ -15,7 +15,7 @@ import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
 
-class ClassifierQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<LearnerWrapper>, LearnerWrapper> implements Serializable
+public class ClassifierQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<LearnerWrapper>, LearnerWrapper> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 

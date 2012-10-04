@@ -99,7 +99,7 @@ public class TridentEvaluateModel extends BaseEmitTask {
 						stateQuery(classifierState,new Fields("args"), new EvaluateQueryFunction(), new Fields("prediction"));
 				
 				Config conf = new Config();
-				conf.setDebug(true);
+				//conf.setDebug(true);
 				//conf.setMaxTaskParallelism(1);
 				
 				MoaStormSupport.submit(topologyName, conf, topology.build());

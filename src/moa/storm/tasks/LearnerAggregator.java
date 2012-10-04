@@ -6,7 +6,7 @@ import storm.trident.operation.ReducerAggregator;
 import storm.trident.tuple.TridentTuple;
 import weka.core.Instance;
 
-class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
+public class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
 	/**
 	 * 
 	 */

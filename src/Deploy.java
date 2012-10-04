@@ -1,4 +1,3 @@
-package moa.storm.topology.test.event_emitter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,65 +25,13 @@ import backtype.storm.StormSubmitter;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 
-class RRR implements ReducerAggregator<String>
-{
-	private static int id;
-	private static int id_cnt=0;
-
-	public RRR(int id)
-	{
-		this.id = id;
-		id_cnt ++;
-	}
-
-	
-	public String init() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String reduce(String curr, TridentTuple tuple) {
-		System.out.println("I am reducer "+ id_cnt + " and processing "+ tuple);
-		return null;
-	}
-	
-}
-
 public class Deploy {
 	
 	
 	private static String STORM_HOME="/home/bsp/storm-0.8.2-wip8";
 	static byte buffer[] = new byte[1024];
 	
-	public static void doSample(TridentTopology topology) throws InterruptedException
-	{
-		FixedBatchSpout spout = new FixedBatchSpout(new Fields("sentence"), 3,
-	               new Values(new StringBuffer("1")),
-	               new Values(new StringBuffer("2")),
-	               new Values(new StringBuffer("3")),
-	               new Values(new StringBuffer("4")) );
-	   spout.setCycle(true);
-	   topology.newStream("spout1", spout).partitionBy(new Fields("sentence")).each(new Fields("sentence"), new BaseFilter(){
-
-		@Override
-		public boolean isKeep(TridentTuple tuple) {
-			StringBuffer inte =(StringBuffer) tuple.getValue(0);
-			inte.append("asdasd");
-					
-			return true;
-		}
-		   
-	   })
-			.persistentAggregate(new MemoryMapState.Factory(), new Fields("sentence"), new RRR(1), new Fields("count")).parallelismHint(10);
-			
-			
-			
-			LocalCluster lolCluster = new LocalCluster();
-			
-			lolCluster.submitTopology("lolpology", new Config(), topology.build());
-			Thread.sleep(10000000);
-			   
-	}
+	
 	
 	public static void main(String[] args) throws Throwable
 	{
@@ -96,11 +43,9 @@ public class Deploy {
 		Config conf = new Config();
 		
 		TridentTopology topology = new TridentTopology();
-		////
-		doSample(topology);
-		//topology.newDRPCStream("test").shuffle().parallelismHint(10);
+	
 		
-		//StormSubmitter.submitTopology("test_topology", conf, topology.build());
+		StormSubmitter.submitTopology("test_topology", conf, topology.build());
 	}
 
 	private static void populate(ZipOutputStream zos, File file, String root) throws Throwable {
