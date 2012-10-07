@@ -3,10 +3,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import moa.storm.topology.StormClusterTopology;
 
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
@@ -22,8 +26,11 @@ import storm.trident.tuple.TridentTuple;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
+import backtype.storm.cluster.StormClusterState;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+import backtype.storm.utils.NimbusClient;
+import backtype.storm.utils.Utils;
 
 public class Deploy {
 	
@@ -35,17 +42,31 @@ public class Deploy {
 	
 	public static void main(String[] args) throws Throwable
 	{
+		Properties prp = new Properties();
+		prp.load(Deploy.class.getResourceAsStream("/storm_cluster.properties"));
+
+		
 		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
 		populate(zos, new File("bin"), new File("bin").getAbsolutePath());
 		zos.close();
-		System.setProperty("storm.home", STORM_HOME);
-		System.setProperty("storm.jar", "topology.jar");
+		System.setProperty("storm.home", prp.getProperty("storm.home"));
+		System.setProperty("storm.jar", prp.getProperty("storm.jar"));
+		
+		String topologyName = prp.getProperty("storm.topology_name");
+		
+        Map config = Utils.readStormConfig();
 		Config conf = new Config();
+		conf.putAll(config);
+
+		try {
+			NimbusClient client = NimbusClient.getConfiguredClient(conf);
+			client.getClient().killTopology(topologyName);
+		}
+		catch (Throwable t){}
+	    
 		
-		TridentTopology topology = new TridentTopology();
-	
-		
-		StormSubmitter.submitTopology("test_topology", conf, topology.build());
+		TridentTopology topology = new StormClusterTopology().create(conf);
+		StormSubmitter.submitTopology(topologyName, conf, topology.build());
 	}
 
 	private static void populate(ZipOutputStream zos, File file, String root) throws Throwable {

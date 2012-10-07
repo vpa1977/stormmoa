@@ -46,9 +46,9 @@ public abstract class LearnEvaluateTopology {
 	public static final String BAGGING_ENSEMBLE_SIZE = "bagging.ensemble_size";
 	private static final String FIELD_WEIGHT = "weight";
 	
-	TridentTopology createOzaBag(Map options)
+	public TridentTopology createOzaBag(Map options)
 	{
-TridentTopology topology = new TridentTopology();
+		TridentTopology topology = new TridentTopology();
 		
 		LocalDRPC drpc = getDRPC(options);
 		StateFactory factory = createFactory(options); 
@@ -100,7 +100,7 @@ TridentTopology topology = new TridentTopology();
 
 	}
 
-	TridentTopology create(Map options)
+	public TridentTopology create(Map options)
 	{
 		TridentTopology topology = new TridentTopology();
 		
@@ -122,7 +122,7 @@ TridentTopology topology = new TridentTopology();
 				stateQuery(classifierState,  new StatQueryFunction(), new Fields(FIELD_STATISTICS));
 		
 		createEvaluationStream(options, topology). 
-			stateQuery(classifierState,new Fields("args"), new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION, FIELD_INSTANCE)).
+			stateQuery(classifierState,new Fields(FIELD_INSTANCE), new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)).
 				each(new Fields(FIELD_PREDICTION, FIELD_INSTANCE), outputQueue(options));
 		
 		return topology;
