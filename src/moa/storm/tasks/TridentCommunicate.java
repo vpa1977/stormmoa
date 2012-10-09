@@ -45,7 +45,7 @@ import moa.streams.InstanceStream;
 import moa.tasks.MainTask;
 import moa.tasks.TaskMonitor;
 
-public class TridentCommuncate extends MainTask {
+public class TridentCommunicate extends MainTask {
 
 	private Connection amqpConnection;
 	private Channel ampqChannel;
@@ -67,7 +67,7 @@ public class TridentCommuncate extends MainTask {
 	private static final long serialVersionUID = 1L;
 
 	public IntOption maxInstancesOption = new IntOption("maxInstances", 'i',
-			"Maximum number of instances to test.", 1000000, 0,
+			"Maximum number of instances to test.", 10000, 0,
 			Integer.MAX_VALUE);
 
 	public FlagOption learningOption = new FlagOption("isLearning", 'l',
@@ -101,7 +101,7 @@ public class TridentCommuncate extends MainTask {
 					"fanout");
 
 			final Queue.DeclareOk queue = ampqChannel.queueDeclare(
-					m_config.getProperty("ampq.prediction_queue"),
+					m_config.getProperty("ampq.learning_queue"),
 					/* durable */true,
 					/* non-exclusive */false,
 					/* non-auto-delete */false,
@@ -138,7 +138,7 @@ public class TridentCommuncate extends MainTask {
 
 			try {
 				m_config.load(getClass().getResourceAsStream(
-						"/storm_cluster.properties"));
+						"/ml_storm_cluster.properties"));
 			} catch (IOException ex) {
 				// TODO Auto-generated catch block
 				ex.printStackTrace();
@@ -150,9 +150,15 @@ public class TridentCommuncate extends MainTask {
 			monitor.setCurrentActivity("Connecting to AMQP Broker", 1.0);
 			monitor.setCurrentActivityFractionComplete(0);
 			connect();
+			
+			String r = drpc.execute("stats", "");
+			r = r.substring(5);
+			r = r.substring(0, r.length() - 2);
+			long currentProcessed = Long.parseLong(r);
+			
 			int maxInstances = this.maxInstancesOption.getValue();
 			int numPasses = this.numPassesOption.getValue();
-
+			long start = System.currentTimeMillis();
 			for (int pass = 0; pass < numPasses; pass++) {
 				long instancesProcessed = 0;
 				monitor.setCurrentActivity("Training learner"
@@ -193,9 +199,11 @@ public class TridentCommuncate extends MainTask {
 				monitor.setCurrentActivity(
 						"Waiting for cluster to finush processing", 1.0);
 				monitor.setCurrentActivityFractionComplete(0);
-				waitCluster(monitor, drpc, instancesProcessed);
+				waitCluster(currentProcessed, monitor, drpc, instancesProcessed);
 
 			}
+			long end  = System.currentTimeMillis();
+			System.out.println ("Done in "+ (end -start) + " ms "); 
 			// - send instances into queue
 			monitor.setCurrentActivity("Retrieving classifier", 1.0);
 
@@ -203,7 +211,7 @@ public class TridentCommuncate extends MainTask {
 			// - query number of instances processed
 
 			// query the classifer
-			String r = drpc.execute("classifier", "");
+			r = drpc.execute("classifier", "");
 			// skip to the data
 			r = r.substring(6);
 			byte[] b = DatatypeConverter.parseBase64Binary(r);
@@ -219,10 +227,10 @@ public class TridentCommuncate extends MainTask {
 		return null;
 	}
 
-	protected long waitCluster(TaskMonitor monitor, DRPCClient drpc,
+	protected long waitCluster(long currentProcessed, TaskMonitor monitor, DRPCClient drpc,
 			long instancesProcessed) throws TException, DRPCExecutionException {
 		long clusterProcessed = 0;
-		while (clusterProcessed < instancesProcessed) {
+		while (clusterProcessed < instancesProcessed + currentProcessed) {
 			String r = drpc.execute("stats", "");
 			r = r.substring(5);
 			r = r.substring(0, r.length() - 2);
@@ -230,7 +238,7 @@ public class TridentCommuncate extends MainTask {
 			monitor.setCurrentActivityFractionComplete((double) clusterProcessed
 					/ (double) (instancesProcessed));
 			try {
-				Thread.sleep(100);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

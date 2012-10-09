@@ -1,3 +1,4 @@
+package performance;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,6 +11,8 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.rapportive.storm.spout.AMQPSpout;
+
 import moa.storm.topology.StormClusterTopology;
 
 import storm.trident.Stream;
@@ -19,6 +22,7 @@ import storm.trident.operation.BaseFilter;
 import storm.trident.operation.CombinerAggregator;
 import storm.trident.operation.ReducerAggregator;
 import storm.trident.operation.builtin.Debug;
+import storm.trident.state.StateFactory;
 import storm.trident.testing.FixedBatchSpout;
 import storm.trident.testing.MemoryMapState;
 import storm.trident.tuple.TridentTuple;
@@ -32,7 +36,7 @@ import backtype.storm.tuple.Values;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
 
-public class Deploy {
+public class DeployAggregate {
 	
 	
 	private static String STORM_HOME="/home/bsp/storm-0.8.2-wip8";
@@ -43,14 +47,14 @@ public class Deploy {
 	public static void main(String[] args) throws Throwable
 	{
 		Properties prp = new Properties();
-		prp.load(Deploy.class.getResourceAsStream("/storm_cluster.properties"));
+		prp.load(DeployAggregate.class.getResourceAsStream("/ml_storm_cluster.properties"));
 
 		
-		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
-		populate(zos, new File("bin"), new File("bin").getAbsolutePath());
-		zos.close();
-		System.setProperty("storm.home", prp.getProperty("storm.home"));
-		System.setProperty("storm.jar", prp.getProperty("storm.jar"));
+		//ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
+		//populate(zos, new File("bin"), new File("bin").getAbsolutePath());
+		//zos.close();
+		//System.setProperty("storm.home", prp.getProperty("storm.home"));
+		//System.setProperty("storm.jar", prp.getProperty("storm.jar"));
 		
 		String topologyName = prp.getProperty("storm.topology_name");
 		
@@ -64,8 +68,35 @@ public class Deploy {
 		}
 		catch (Throwable t){}
 	    
+		TridentTopology topology = new TridentTopology();
+		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
+		StormClusterTopology storm = new StormClusterTopology("/ml_storm_cluster.properties");
+		StateFactory factory = storm.createFactory(null);
 		
-		TridentTopology topology = new StormClusterTopology("/storm_cluster.properties").create(conf);
+		Stream s = storm.createLearningStream(null, topology);
+		s.each(new Fields("instance"), new BaseFilter(){
+
+			@Override
+			public boolean isKeep(TridentTuple tuple) {
+				// TODO Auto-generated method stub
+				return true;
+			}
+			
+		}).parallelismHint(30).persistentAggregate(factory, new ReducerAggregator<Integer>(){
+
+			@Override
+			public Integer init() {
+				// TODO Auto-generated method stub
+				return 1;
+			}
+
+			@Override
+			public Integer reduce(Integer curr, TridentTuple tuple) {
+				// TODO Auto-generated method stub
+				return 1;
+			}
+			
+		}, new Fields("output"));
 		StormSubmitter.submitTopology(topologyName, conf, topology.build());
 	}
 

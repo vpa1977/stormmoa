@@ -1,3 +1,4 @@
+package performance;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,6 +10,8 @@ import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import com.rapportive.storm.spout.AMQPSpout;
 
 import moa.storm.topology.StormClusterTopology;
 
@@ -43,14 +46,14 @@ public class Deploy {
 	public static void main(String[] args) throws Throwable
 	{
 		Properties prp = new Properties();
-		prp.load(Deploy.class.getResourceAsStream("/storm_cluster.properties"));
+		prp.load(Deploy.class.getResourceAsStream("/ml_storm_cluster.properties"));
 
 		
-		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
-		populate(zos, new File("bin"), new File("bin").getAbsolutePath());
-		zos.close();
-		System.setProperty("storm.home", prp.getProperty("storm.home"));
-		System.setProperty("storm.jar", prp.getProperty("storm.jar"));
+		//ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
+		//populate(zos, new File("bin"), new File("bin").getAbsolutePath());
+		//zos.close();
+		//System.setProperty("storm.home", prp.getProperty("storm.home"));
+		//System.setProperty("storm.jar", prp.getProperty("storm.jar"));
 		
 		String topologyName = prp.getProperty("storm.topology_name");
 		
@@ -64,8 +67,19 @@ public class Deploy {
 		}
 		catch (Throwable t){}
 	    
-		
-		TridentTopology topology = new StormClusterTopology("/storm_cluster.properties").create(conf);
+		TridentTopology topology = new TridentTopology();
+		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
+		StormClusterTopology storm = new StormClusterTopology("/ml_storm_cluster.properties");
+		Stream s = storm.createLearningStream(null, topology);
+		s.each(new Fields("instance"), new BaseFilter(){
+
+			@Override
+			public boolean isKeep(TridentTuple tuple) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+		});
 		StormSubmitter.submitTopology(topologyName, conf, topology.build());
 	}
 

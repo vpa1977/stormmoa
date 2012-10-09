@@ -20,6 +20,11 @@ public class OutputQueue implements Filter {
 	private com.rabbitmq.client.Connection amqpConnection;
 	private com.rabbitmq.client.Channel ampqChannel;
 	private Properties m_config;
+	
+	public OutputQueue(Properties config)
+	{
+		m_config = config;
+	}
 
 	/** 
 	 * Establish connection to the output queue. 
@@ -42,17 +47,17 @@ public class OutputQueue implements Filter {
 			amqpConnection = connectionFactory.newConnection();
 			ampqChannel = amqpConnection.createChannel();
 			ampqChannel
-					.exchangeDeclare(m_config.getProperty("ampq.exchange"), "fanout");
+					.exchangeDeclare(m_config.getProperty("ampq.prediction_results_exchange"), "fanout");
 	
 			final Queue.DeclareOk queue = ampqChannel.queueDeclare(
-					m_config.getProperty("ampq.prediction_queue"),
+					m_config.getProperty("ampq.prediction_results_queue"),
 					/* durable */true,
 					/* non-exclusive */false,
 					/* non-auto-delete */false,
 					/* no arguments */null);
 	
 			ampqChannel.queueBind(queue.getQueue(),
-					m_config.getProperty("ampq.exchange"), "#");
+					m_config.getProperty("ampq.prediction_results_exchange"), "#");
 		}
 		catch (Throwable t ){
 			t.printStackTrace();

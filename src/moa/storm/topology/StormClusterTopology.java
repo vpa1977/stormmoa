@@ -1,6 +1,7 @@
 package moa.storm.topology;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,39 +27,43 @@ import storm.trident.state.StateFactory;
 import trident.memcached.MemcachedState;
 import backtype.storm.LocalDRPC;
 
-public class StormClusterTopology  extends LearnEvaluateTopology {
+public class StormClusterTopology  extends LearnEvaluateTopology implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1366120826571872535L;
 	Properties m_config;
 	
 	
-	public StormClusterTopology() throws IOException
+	public StormClusterTopology(String propertyFile) throws IOException
 	{
 		Properties prp = new Properties();
-		prp.load(getClass().getResourceAsStream("/storm_cluster.properties"));
+		prp.load(getClass().getResourceAsStream(propertyFile));
 		m_config = prp;
 		
 	}
 
 	@Override
 	public Filter outputQueue(Map options) {
-		return new OutputQueue();
+		return new OutputQueue(m_config);
 	}
 
 	@Override
-	public Stream createEvaluationStream(Map options, TridentTopology topology) {
-		SharedQueueWithBinding queue = new SharedQueueWithBinding(m_config.getProperty("ampq.evaluation_queue"), 
-				m_config.getProperty("ampq.exchange"), "#");
+	public Stream createPredictionStream(Map options, TridentTopology topology) {
+		SharedQueueWithBinding queue = new SharedQueueWithBinding(m_config.getProperty("ampq.prediction_queue"), 
+				m_config.getProperty("ampq.prediction_exchange"), "#");
 		String host = m_config.getProperty("ampq.host");
 		int port = Integer.parseInt( m_config.getProperty("ampq.port")); // default ampq host
 		String vhost = m_config.getProperty("ampq.vhost");
-		String username =m_config.getProperty("ampq.username");
+		String username =m_config.getProperty("ampq.username"); 
 		String password =m_config.getProperty("ampq.password");
 		InstanceScheme scheme = new InstanceScheme();
 
 		AMQPSpout spout = new AMQPSpout(host, port, username, password,
 				vhost, queue, scheme);
 
-		return topology.newStream("instances", spout);
+		return topology.newStream("predictions", spout);
 	}
 
 	@Override
@@ -78,6 +83,8 @@ public class StormClusterTopology  extends LearnEvaluateTopology {
 
 	@Override
 	public LocalDRPC getDRPC(Map options) {
+		if (options != null)
+			return (LocalDRPC) options.get("rpc");
 		return null;
 	}
 
@@ -98,7 +105,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology {
 				memcachedHosts.add( addr);
 			}
 		}
-		return MemcachedState.transactional(memcachedHosts);
+		return MemcachedState.nonTransactional(memcachedHosts);
 		
 	}
 
@@ -106,12 +113,20 @@ public class StormClusterTopology  extends LearnEvaluateTopology {
 	public Classifier getClassifier(Map options) {
 		String cliString = m_config.getProperty("moa.classifier");
 		try {
-			return (Classifier)ClassOption.cliStringToObject(cliString, Classifier.class, new Option[]{});
+			Classifier cls =  (Classifier)ClassOption.cliStringToObject(cliString, Classifier.class, new Option[]{});
+			cls.prepareForUse();
+			cls.resetLearning();
+			return cls;
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public void setClassiferOption(String string) {
+		m_config.setProperty("moa.classifier", string);
+		
 	}
 
 }

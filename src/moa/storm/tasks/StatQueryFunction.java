@@ -19,13 +19,25 @@ public class StatQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<L
 
 	public List<LearnerWrapper> batchRetrieve(ReadOnlySnapshottable<LearnerWrapper> state,
 			List<TridentTuple> args) {
-		LearnerWrapper theClassifier = state.get();
-		ArrayList<LearnerWrapper> list = new ArrayList<LearnerWrapper>();
-		for (TridentTuple t : args)
-		{
-			list.add( theClassifier);
+		
+		try {
+			LearnerWrapper theClassifier = state.get();
+			ArrayList<LearnerWrapper> list = new ArrayList<LearnerWrapper>();
+			for (TridentTuple t : args)
+			{
+				list.add( theClassifier);
+			}
+			return list;
 		}
-		return list;
+		catch (Throwable t)
+		{
+			// class cast exception and other interesting things if the cache is empty 
+			// probably bug in trident. 
+			ArrayList<LearnerWrapper> list = new ArrayList<LearnerWrapper>();
+			list.add( new LearnerWrapper(null));
+			return list;
+		}
+		
 	}
 	
 	@Override
