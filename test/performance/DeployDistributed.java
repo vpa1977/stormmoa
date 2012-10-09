@@ -82,6 +82,7 @@ public class DeployDistributed {
 		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
 		HashMap  tridentconfig = new HashMap();
 		tridentconfig.put(storm.BAGGING_ENSEMBLE_SIZE, args[0]);
+		conf.setMaxTaskParallelism(conf, 20);
 		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
 		
 		/*LocalCluster cls = new LocalCluster();
@@ -90,6 +91,7 @@ public class DeployDistributed {
 		
 		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
 		*/
+		
 	}
 
 	private static void populate(ZipOutputStream zos, File file, String root) throws Throwable {

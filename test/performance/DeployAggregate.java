@@ -71,7 +71,7 @@ public class DeployAggregate {
 		TridentTopology topology = new TridentTopology();
 		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
 		StormClusterTopology storm = new StormClusterTopology("/ml_storm_cluster.properties");
-		StateFactory factory = storm.createFactory(null);
+		StateFactory factory = storm.createFactory("sss");
 		
 		Stream s = storm.createLearningStream(null, topology);
 		s.each(new Fields("instance"), new BaseFilter(){

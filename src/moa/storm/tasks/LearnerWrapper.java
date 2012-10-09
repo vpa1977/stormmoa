@@ -35,6 +35,7 @@ public class LearnerWrapper implements Serializable{
 	
 	private Classifier classifier;
 	
+	
 	private ClassificationPerformanceEvaluator evaluator;
 	
 	private long instancesProcessed;

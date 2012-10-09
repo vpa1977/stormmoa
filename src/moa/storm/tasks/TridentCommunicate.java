@@ -151,10 +151,12 @@ public class TridentCommunicate extends MainTask {
 			monitor.setCurrentActivityFractionComplete(0);
 			connect();
 			
-			String r = drpc.execute("stats", "");
-			r = r.substring(5);
-			r = r.substring(0, r.length() - 2);
-			long currentProcessed = Long.parseLong(r);
+		//	String r = drpc.execute("stats", "");
+//			r = r.substring(5);
+			//r = r.substring(0, r.length() - 2);
+			//long currentProcessed = Long.parseLong(r);
+			String r;
+			long currentProcessed =0;
 			
 			int maxInstances = this.maxInstancesOption.getValue();
 			int numPasses = this.numPassesOption.getValue();
@@ -170,7 +172,7 @@ public class TridentCommunicate extends MainTask {
 				while (stream.hasMoreInstances()
 						&& ((maxInstances < 0) || (instancesProcessed < maxInstances))) {
 
-					send(stream.nextInstance());
+					send(stream.nextInstance().copy());
 
 					instancesProcessed++;
 					if (instancesProcessed % INSTANCES_BETWEEN_MONITOR_UPDATES == 0) {
@@ -197,7 +199,7 @@ public class TridentCommunicate extends MainTask {
 				}
 
 				monitor.setCurrentActivity(
-						"Waiting for cluster to finush processing", 1.0);
+						"Waiting for cluster to finish processing", 1.0);
 				monitor.setCurrentActivityFractionComplete(0);
 				waitCluster(currentProcessed, monitor, drpc, instancesProcessed);
 

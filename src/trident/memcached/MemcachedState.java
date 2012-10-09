@@ -41,8 +41,8 @@ public class MemcachedState<T> implements IBackingMap<T> {
     
     public static class Options<T> implements Serializable {
         int localCacheSize = 1000;
-        String globalKey = "$GLOBAL$";
-        Serializer<T> serializer = null;
+        public String globalKey = "$GLOBAL$";
+        public Serializer<T> serializer = null;
     }  
     
     public static StateFactory opaque(List<InetSocketAddress> servers) {

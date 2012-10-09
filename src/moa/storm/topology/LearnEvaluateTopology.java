@@ -25,6 +25,7 @@ import storm.trident.operation.ReducerAggregator;
 import storm.trident.operation.TridentCollector;
 import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.StateFactory;
+import storm.trident.state.StateSpec;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
 import weka.core.Instance;
@@ -56,8 +57,7 @@ public abstract class LearnEvaluateTopology {
 		TridentTopology topology = new TridentTopology();
 		
 		LocalDRPC drpc = getDRPC(options);
-		StateFactory factory = createFactory(options); 
-		LearnerWrapper wrapper = new LearnerWrapper( getClassifier(options) );
+		 
 		
 		int ensemble_size = Integer.parseInt(String.valueOf(options.get(BAGGING_ENSEMBLE_SIZE)));
 		TridentState[] classifierState = new TridentState[ensemble_size];
@@ -65,7 +65,8 @@ public abstract class LearnEvaluateTopology {
 		Stream learningStream = createLearningStream(options, topology);
 		for (int i = 0; i < ensemble_size; i++)
 		{
-			classifierState[i] = learningStream.each(new Fields(FIELD_INSTANCE), new Deserialize(),new Fields(FIELD_WEIGHT) ).
+			
+			classifierState[i] = learningStream.project(new Fields(FIELD_INSTANCE)).each(new Fields(FIELD_INSTANCE), new Deserialize(),new Fields(FIELD_WEIGHT) ).
 				each(new Fields(FIELD_INSTANCE, FIELD_WEIGHT), new BaseFilter(){
 					@Override
 					public boolean isKeep(TridentTuple tuple) {
@@ -78,51 +79,40 @@ public abstract class LearnEvaluateTopology {
 						return false;
 					}
 				}).		
-					persistentAggregate(factory, new Fields(FIELD_INSTANCE), 
-							new LearnerAggregator(wrapper), new Fields(FIELD_CLASSIFIER));	
+					persistentAggregate(createFactory(FIELD_CLASSIFIER+i), new Fields(FIELD_INSTANCE), 
+							new LearnerAggregator(new LearnerWrapper( getClassifier(options) )), new Fields(FIELD_CLASSIFIER+i));	
 		}
-		TridentState readCount = learningStream.persistentAggregate(factory, new ReducerAggregator<Integer>(){
+		TridentState readCount = learningStream.project(new Fields(FIELD_INSTANCE)).persistentAggregate(createFactory(FIELD_CLASSIFIER+System.currentTimeMillis()), new ReducerAggregator<Long>(){
 
 			@Override
-			public Integer init() {
+			public Long init() {
 				// TODO Auto-generated method stub
-				return new Integer(0);
+				return new Long(0);
 			}
 
 			@Override
-			public Integer reduce(Integer curr, TridentTuple tuple) {
+			public Long reduce(Long curr, TridentTuple tuple) {
 				if (curr == null)
 					curr = init();
 				return curr+1;
 			}
 			
 		}, new Fields("count_instances"));
-				
-		ArrayList<Stream> merge = new ArrayList<Stream>();
-		Stream evaluate = topology.newDRPCStream(RPC_EVALUATE, drpc);
-		for (int i = 0; i < ensemble_size; i++)
-		{
-			merge.add(evaluate.
-					stateQuery(classifierState[i],new Fields("args"), 
-								new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION, FIELD_INSTANCE)));
-		}
-		topology.merge(merge).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new BaggingAggregator(),  new Fields(FIELD_PREDICTION));
-				
 		
 		topology.newDRPCStream(RPC_STATS, drpc).
-				stateQuery(readCount,  new BaseQueryFunction<ReadOnlySnapshottable<Integer>, Integer>(){
+				stateQuery(readCount,  new BaseQueryFunction<ReadOnlySnapshottable<Long>, Long>(){
 
 					@Override
-					public List<Integer> batchRetrieve(
-							ReadOnlySnapshottable<Integer> state,
+					public List<Long> batchRetrieve(
+							ReadOnlySnapshottable<Long> state,
 							List<TridentTuple> args) {
-						ArrayList<Integer> res = new ArrayList<Integer>();
+						ArrayList<Long> res = new ArrayList<Long>();
 						res.add( state.get());
 						return res;
 					}
 
 					@Override
-					public void execute(TridentTuple tuple, Integer result,
+					public void execute(TridentTuple tuple, Long result,
 							TridentCollector collector) {
 						ArrayList<Object> list = new ArrayList<Object>();
 						if (result != null)
@@ -133,7 +123,19 @@ public abstract class LearnEvaluateTopology {
 						
 					}
 					
-				}, new Fields(FIELD_STATISTICS));
+				}, new Fields("count_instances"));
+		
+		ArrayList<Stream> merge = new ArrayList<Stream>();
+		Stream evaluate = topology.newDRPCStream(RPC_EVALUATE, drpc);
+		for (int i = 0; i < ensemble_size; i++)
+		{
+			merge.add(evaluate.project(new Fields("args")).
+					stateQuery(classifierState[i],new Fields("args"), 
+								new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION, FIELD_INSTANCE)));
+		}
+		topology.merge(merge).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new BaggingAggregator(),  new Fields(FIELD_PREDICTION));
+				
+		
 				
 		
 		
@@ -150,11 +152,11 @@ public abstract class LearnEvaluateTopology {
 		TridentTopology topology = new TridentTopology();
 		
 		LocalDRPC drpc = getDRPC(options);
-		StateFactory factory = createFactory(options); 
+		; 
 		LearnerWrapper wrapper = new LearnerWrapper( getClassifier(options) );
 		
-		Stream learningStream = createLearningStream(options, topology);
-		TridentState classifierState = learningStream.persistentAggregate(factory, new Fields(FIELD_INSTANCE), 
+		Stream learningStream = createLearningStream(options, topology).parallelismHint(32);
+		TridentState classifierState = learningStream.persistentAggregate(createFactory(System.currentTimeMillis()+""), new Fields(FIELD_INSTANCE), 
 				new LearnerAggregator(wrapper), new Fields(FIELD_CLASSIFIER));
 		
 		topology.newDRPCStream(RPC_CLASSIFIER, drpc).
@@ -180,7 +182,7 @@ public abstract class LearnEvaluateTopology {
 
 	public abstract LocalDRPC getDRPC(Map options);
 
-	public abstract StateFactory createFactory(Map options);
+	public abstract StateFactory createFactory(String string);
 	
 	public abstract Classifier getClassifier(Map options);
 	

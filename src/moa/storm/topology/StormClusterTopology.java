@@ -24,6 +24,7 @@ import storm.trident.Stream;
 import storm.trident.TridentTopology;
 import storm.trident.operation.Filter;
 import storm.trident.state.StateFactory;
+import storm.trident.state.TransactionalValue;
 import trident.memcached.MemcachedState;
 import backtype.storm.LocalDRPC;
 
@@ -88,7 +89,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 		return null;
 	}
 
-	@Override
+	
 	public StateFactory createFactory(Map options) {
 		ArrayList<InetSocketAddress> memcachedHosts = new ArrayList<InetSocketAddress>();
 		Enumeration<?> en = m_config.propertyNames();
@@ -128,5 +129,27 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 		m_config.setProperty("moa.classifier", string);
 		
 	}
+
+	@Override
+	public StateFactory createFactory(String string) {
+		ArrayList<InetSocketAddress> memcachedHosts = new ArrayList<InetSocketAddress>();
+		Enumeration<?> en = m_config.propertyNames();
+		while (en.hasMoreElements())
+		{
+			String name = String.valueOf(en.nextElement());
+			if (name.startsWith("memcached"))
+			{
+				String value = m_config.getProperty(name);
+				StringTokenizer tk = new StringTokenizer( value, ":");
+				String host = tk.nextToken();
+				int port = Integer.parseInt(tk.nextToken());
+				InetSocketAddress addr = new InetSocketAddress(host,port);
+				memcachedHosts.add( addr);
+			}
+		}
+		MemcachedState.Options<TransactionalValue> opts = new MemcachedState.Options<TransactionalValue>();
+		opts.globalKey = string;
+		return MemcachedState.transactional(memcachedHosts, opts);	
+		}
 
 }
