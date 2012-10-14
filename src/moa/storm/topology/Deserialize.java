@@ -22,8 +22,8 @@ import weka.core.Instance;
  *
  */
 public class Deserialize extends BaseFunction implements Function {
-	// TODO : add seed
-	public Random classifierRandom = new Random(); 
+
+ 
 	
 	@Override
 	public void execute(TridentTuple tuple, TridentCollector collector) {
@@ -51,10 +51,9 @@ public class Deserialize extends BaseFunction implements Function {
 		} else{
 			throw new RuntimeException("Cannot deserialize "+ value);
 		}
-		int weight =  MiscUtils.poisson(1.0, this.classifierRandom);
+		
 		ArrayList<Object> output = new ArrayList<Object>();
-		output.add(weight);
-		output.add(inst.copy());
+		output.add(inst);
 		collector.emit(output);
 	}
 

@@ -2,7 +2,9 @@ package moa.storm.topology;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -22,9 +24,11 @@ import moa.options.Options;
 import moa.storm.scheme.InstanceScheme;
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
+import storm.trident.operation.Aggregator;
 import storm.trident.operation.Filter;
 import storm.trident.state.StateFactory;
 import storm.trident.state.TransactionalValue;
+import trident.memcached.JSONObjectTransactionalSerializer;
 import trident.memcached.MemcachedState;
 import backtype.storm.LocalDRPC;
 
@@ -46,7 +50,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 	}
 
 	@Override
-	public Filter outputQueue(Map options) {
+	public Aggregator outputQueue(Map options) {
 		return new OutputQueue(m_config);
 	}
 
@@ -63,7 +67,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 
 		AMQPSpout spout = new AMQPSpout(host, port, username, password,
 				vhost, queue, scheme);
-
+		
 		return topology.newStream("predictions", spout);
 	}
 
@@ -132,6 +136,12 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 
 	@Override
 	public StateFactory createFactory(String string) {
+		try {
+			System.out.println("TridentDeploy "+ Inet4Address.getLocalHost().getCanonicalHostName() + " =^= "+ string);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		ArrayList<InetSocketAddress> memcachedHosts = new ArrayList<InetSocketAddress>();
 		Enumeration<?> en = m_config.propertyNames();
 		while (en.hasMoreElements())
@@ -149,6 +159,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 		}
 		MemcachedState.Options<TransactionalValue> opts = new MemcachedState.Options<TransactionalValue>();
 		opts.globalKey = string;
+		opts.serializer = new JSONObjectTransactionalSerializer();
 		return MemcachedState.transactional(memcachedHosts, opts);	
 		}
 

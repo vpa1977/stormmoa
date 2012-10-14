@@ -51,7 +51,7 @@ public class DeployDistributed {
 		prp.load(DeployDistributed.class.getResourceAsStream("/ml_storm_cluster.properties"));
 		
 		String classifier = "";
-		for (int i = 1 ; i < args.length ; i ++ )
+		for (int i = 2 ; i < args.length ; i ++ )
 		{
 			classifier += " " + args[i];
 		}
@@ -79,19 +79,22 @@ public class DeployDistributed {
 		StormClusterTopology storm = new StormClusterTopology("/ml_storm_cluster.properties");
 		storm.setClassiferOption(classifier);
 		
-		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
+		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 10000);
+		//conf.put("topology.max.spout.pending",  10000);
 		HashMap  tridentconfig = new HashMap();
 		tridentconfig.put(storm.BAGGING_ENSEMBLE_SIZE, args[0]);
-		conf.setMaxTaskParallelism(conf, 20);
-		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+		tridentconfig.put("learning.parallelism", args[1]);
+	//	conf.setMaxTaskParallelism(conf, 4);
 		
-		/*LocalCluster cls = new LocalCluster();
+//		conf.setNumWorkers(conf, 32);
+//		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+		
+		LocalCluster cls = new LocalCluster();
 		LocalDRPC local = new LocalDRPC();
 		tridentconfig.put("rpc", local);
 		
 		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
-		*/
-		
+				
 	}
 
 	private static void populate(ZipOutputStream zos, File file, String root) throws Throwable {

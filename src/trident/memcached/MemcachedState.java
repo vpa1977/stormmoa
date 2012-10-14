@@ -90,37 +90,46 @@ public class MemcachedState<T> implements IBackingMap<T> {
         }
         
         
+        
         public State makeState(Map conf, int partitionIndex, int numPartitions) {
-            ConnectionFactoryBuilder builder =
-                    new ConnectionFactoryBuilder()
-                        .setTranscoder(new Transcoder<Object>() {
-
-               
-                public boolean asyncDecode(CachedData cd) {
-                    return false;
-                }
-
-                
-                public CachedData encode(Object t) {
-                    return new CachedData(0, _ser.serialize(t), CachedData.MAX_SIZE);
-                }
-
-              
-                public Object decode(CachedData data) {
-                    return _ser.deserialize(data.getData());
-                }
-
-              
-                public int getMaxSize() {
-                    return CachedData.MAX_SIZE;
-                }
-            });
+        	MemcachedClient _memcached_client = null;
+        	// TODO : HANDLE DISCONNECTS
+        	if (_memcached_client == null) {
+	            ConnectionFactoryBuilder builder =
+	                    new ConnectionFactoryBuilder()
+	                        .setTranscoder(new Transcoder<Object>() {
+	
+	               
+	                public boolean asyncDecode(CachedData cd) {
+	                    return false;
+	                }
+	
+	                
+	                public CachedData encode(Object t) {
+	                    return new CachedData(0, 
+	                    		_ser.serialize(t), CachedData.MAX_SIZE);
+	                }
+	
+	              
+	                public Object decode(CachedData data) {
+	                    return _ser.deserialize(data.getData());
+	                }
+	
+	              
+	                public int getMaxSize() {
+	                    return CachedData.MAX_SIZE;
+	                }
+	            });
+	            try {
+		            _memcached_client = new MemcachedClient(builder.build(), _servers);
+	        	} catch (IOException e) {
+	                throw new RuntimeException(e);
+	            }
+        	}
+	            
             MemcachedState s;
-            try {
-                s = new MemcachedState(new MemcachedClient(builder.build(), _servers));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+              s = new MemcachedState(_memcached_client);
+            
             CachedMap c = new CachedMap(s, _opts.localCacheSize);
             MapState ms;
             if(_type == StateType.NON_TRANSACTIONAL) {

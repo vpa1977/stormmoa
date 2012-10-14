@@ -30,20 +30,28 @@ public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottab
 	public void execute(TridentTuple tuple, LearnerWrapper result,
 			TridentCollector collector) {
 		Object value = tuple.getValue(0);
-		
-		byte[] b = DatatypeConverter.parseBase64Binary(String.valueOf(value));
-        ObjectInputStream is;
-        Object serializedObject = null;
-		try {
-			is = new ObjectInputStream( new ByteArrayInputStream(b));
-			serializedObject = is.readObject();
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		Object serializedObject = null;
+		if ( value instanceof String )
+		{
+			byte[] b = DatatypeConverter.parseBase64Binary(String.valueOf(value));
+	        ObjectInputStream is;
+	        
+			try {
+				is = new ObjectInputStream( new ByteArrayInputStream(b));
+				serializedObject = is.readObject();
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else
+		if (value instanceof Instance)
+		{
+			serializedObject =value;
 		}
 
 		if (result != null)
