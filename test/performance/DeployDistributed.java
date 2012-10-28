@@ -51,7 +51,7 @@ public class DeployDistributed {
 		prp.load(DeployDistributed.class.getResourceAsStream("/ml_storm_cluster.properties"));
 		
 		String classifier = "";
-		for (int i = 2 ; i < args.length ; i ++ )
+		for (int i = 3 ; i < args.length ; i ++ )
 		{
 			classifier += " " + args[i];
 		}
@@ -84,16 +84,17 @@ public class DeployDistributed {
 		HashMap  tridentconfig = new HashMap();
 		tridentconfig.put(storm.BAGGING_ENSEMBLE_SIZE, args[0]);
 		tridentconfig.put("learning.parallelism", args[1]);
+		tridentconfig.put("evaluation.parallelism",args[2]);
 	//	conf.setMaxTaskParallelism(conf, 4);
 		
-//		conf.setNumWorkers(conf, 32);
-//		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+		conf.setNumWorkers(conf, 28);
+		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
 		
-		LocalCluster cls = new LocalCluster();
+		/*LocalCluster cls = new LocalCluster();
 		LocalDRPC local = new LocalDRPC();
 		tridentconfig.put("rpc", local);
 		
-		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
+		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());*/
 				
 	}
 

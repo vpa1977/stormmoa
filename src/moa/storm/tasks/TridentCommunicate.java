@@ -201,7 +201,7 @@ public class TridentCommunicate extends MainTask {
 				monitor.setCurrentActivity(
 						"Waiting for cluster to finish processing", 1.0);
 				monitor.setCurrentActivityFractionComplete(0);
-				waitCluster(currentProcessed, monitor, drpc, instancesProcessed);
+//				waitCluster(currentProcessed, monitor, drpc, instancesProcessed);
 
 			}
 			long end  = System.currentTimeMillis();

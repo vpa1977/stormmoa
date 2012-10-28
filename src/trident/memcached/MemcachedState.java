@@ -89,12 +89,14 @@ public class MemcachedState<T> implements IBackingMap<T> {
             }
         }
         
-        
+        private static MemcachedClient _memcached_client = null;
         
         public State makeState(Map conf, int partitionIndex, int numPartitions) {
-        	MemcachedClient _memcached_client = null;
+        	
         	// TODO : HANDLE DISCONNECTS
         	if (_memcached_client == null) {
+        		
+        		// ignore max size here.
 	            ConnectionFactoryBuilder builder =
 	                    new ConnectionFactoryBuilder()
 	                        .setTranscoder(new Transcoder<Object>() {
@@ -107,7 +109,7 @@ public class MemcachedState<T> implements IBackingMap<T> {
 	                
 	                public CachedData encode(Object t) {
 	                    return new CachedData(0, 
-	                    		_ser.serialize(t), CachedData.MAX_SIZE);
+	                    		_ser.serialize(t), Integer.MAX_VALUE);
 	                }
 	
 	              
@@ -117,7 +119,7 @@ public class MemcachedState<T> implements IBackingMap<T> {
 	
 	              
 	                public int getMaxSize() {
-	                    return CachedData.MAX_SIZE;
+	                    return Integer.MAX_VALUE;
 	                }
 	            });
 	            try {

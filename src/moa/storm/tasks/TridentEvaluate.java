@@ -101,7 +101,7 @@ public class TridentEvaluate extends MainTask {
 			amqpConnection = connectionFactory.newConnection();
 			learningChannel = createChannel(m_config.getProperty("ampq.exchange"), m_config.getProperty("ampq.learning_queue"));
 			predictionChannel = createChannel(m_config.getProperty("ampq.prediction_exchange"), m_config.getProperty("ampq.prediction_queue"));
-			predictionResultChannel = createChannel(m_config.getProperty("ampq.prediction_results_exchange"), m_config.getProperty("ampq.prediction_results_queue"));
+			//predictionResultChannel = createChannel(m_config.getProperty("ampq.prediction_results_exchange"), m_config.getProperty("ampq.prediction_results_queue"));
 			
 		} catch (Throwable t) {
 			t.printStackTrace();

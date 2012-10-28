@@ -64,7 +64,7 @@ public abstract class LearnEvaluateTopology {
 		int ensemble_size = Integer.parseInt(String.valueOf(options.get(BAGGING_ENSEMBLE_SIZE)));
 		TridentState[] classifierState = new TridentState[ensemble_size];
 		
-		int par_learning = 1;
+		int par_learning = 4;
 		String learning_parallelism = (String)options.get("learning.parallelism");
 		if (learning_parallelism!= null)
 			par_learning = Integer.parseInt(learning_parallelism);
@@ -134,7 +134,7 @@ public abstract class LearnEvaluateTopology {
 		topology.merge(merge).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new BaggingAggregator(),  new Fields(FIELD_PREDICTION));
 		*/
 
-		int par_evaluation = 1;
+		int par_evaluation = 4;
 		String evaluation_parallelism = (String)options.get("evaluation.parallelism");
 		if (evaluation_parallelism!= null)
 			par_evaluation = Integer.parseInt(evaluation_parallelism);
@@ -174,22 +174,22 @@ public abstract class LearnEvaluateTopology {
 		TridentState classifierState = learningStream.persistentAggregate(createFactory(System.currentTimeMillis()+""), new Fields(FIELD_INSTANCE), 
 				new LearnerAggregator(wrapper), new Fields(FIELD_CLASSIFIER));
 		
-		topology.newDRPCStream(RPC_CLASSIFIER, drpc).
-				stateQuery(classifierState, new ClassifierQueryFunction(), new Fields(FIELD_CLASSIFIER));
+		//topology.newDRPCStream(RPC_CLASSIFIER, drpc).
+			//	stateQuery(classifierState, new ClassifierQueryFunction(), new Fields(FIELD_CLASSIFIER));
 		
-		topology.newDRPCStream(RPC_EVALUATE, drpc).
-				stateQuery(classifierState,new Fields("args"), new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
+		//topology.newDRPCStream(RPC_EVALUATE, drpc).
+				//stateQuery(classifierState,new Fields("args"), new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
 		
-		topology.newDRPCStream(RPC_STATS, drpc).
-				stateQuery(classifierState,  new StatQueryFunction(), new Fields(FIELD_STATISTICS));
+		//topology.newDRPCStream(RPC_STATS, drpc).
+			//	stateQuery(classifierState,  new StatQueryFunction(), new Fields(FIELD_STATISTICS));
 		
-		int par_evaluation = 32;
+		int par_evaluation = 4;
 		String evaluation_parallelism = (String)options.get("evaluation.parallelism");
 		if (evaluation_parallelism!= null)
 			par_evaluation = Integer.parseInt(evaluation_parallelism);
 		createPredictionStream(options, topology).parallelismHint(par_evaluation)
 			.stateQuery(classifierState,new Fields(FIELD_INSTANCE), new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)).
-				aggregate(outputQueue(options),new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
+				aggregate(new Fields(FIELD_PREDICTION, FIELD_INSTANCE),outputQueue(options),new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
 		
 		return topology;
 	}

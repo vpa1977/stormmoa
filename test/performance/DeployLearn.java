@@ -48,12 +48,12 @@ public class DeployLearn {
 	public static void main(String[] args) throws Throwable
 	{
 		Properties prp = new Properties();
-		prp.load(DeployLearn.class.getResourceAsStream("/ml_storm_cluster.properties"));
+		prp.load(DeployLearn.class.getResourceAsStream("/storm_cluster.properties"));
 		
 		String classifier = "";
-		for (String s : args)
+		for (int i = 3 ; i < args.length ; i ++ )
 		{
-			classifier += " " + s;
+			classifier += " " + args[i];
 		}
 		classifier = classifier.trim();
 
@@ -76,11 +76,17 @@ public class DeployLearn {
 		}
 		catch (Throwable t){}
 	    
-		StormClusterTopology storm = new StormClusterTopology("/ml_storm_cluster.properties");
+		StormClusterTopology storm = new StormClusterTopology("/storm_cluster.properties");
 		storm.setClassiferOption(classifier);
-		
+		HashMap  tridentconfig = new HashMap();
+		tridentconfig.put(storm.BAGGING_ENSEMBLE_SIZE, args[0]);
+		tridentconfig.put("learning.parallelism", args[1]);
+		tridentconfig.put("evaluation.parallelism",args[2]);
+
 		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
-		StormSubmitter.submitTopology(topologyName, conf, storm.create(null).build());
+		conf.setNumWorkers(28);
+		StormSubmitter.submitTopology(topologyName, conf, storm.create(tridentconfig).build());
+		
 		/*LocalCluster cls = new LocalCluster();
 		LocalDRPC local = new LocalDRPC();
 		
@@ -89,6 +95,7 @@ public class DeployLearn {
 		
 		cls.submitTopology(topologyName,  conf,storm.create(tridentconfig).build());
 		*/
+		
 	}
 
 	private static void populate(ZipOutputStream zos, File file, String root) throws Throwable {
