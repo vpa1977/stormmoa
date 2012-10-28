@@ -26,6 +26,8 @@ public class LearnerAggregator implements ReducerAggregator<LearnerWrapper> {
 	public LearnerWrapper init() {
 		return learner;
 	}
+	
+	
 
 	public LearnerWrapper reduce(LearnerWrapper curr, TridentTuple tuple) {
 		if (curr == null)

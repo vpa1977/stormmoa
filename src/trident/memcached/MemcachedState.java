@@ -108,8 +108,9 @@ public class MemcachedState<T> implements IBackingMap<T> {
 	
 	                
 	                public CachedData encode(Object t) {
-	                    return new CachedData(0, 
-	                    		_ser.serialize(t), Integer.MAX_VALUE);
+	                	byte[] serializedData =_ser.serialize(t);
+	                	System.out.println("::: data "+ serializedData.length);
+	                    return new CachedData(0, serializedData, Integer.MAX_VALUE);
 	                }
 	
 	              
