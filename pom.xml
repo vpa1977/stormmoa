@@ -23,7 +23,7 @@
     <dependency>
       <groupId>storm</groupId>
       <artifactId>storm</artifactId>
-      <version>0.8.2-wip8</version>
+      <version>0.8.2-wip18</version>
       <scope>provided</scope>
     </dependency>
   

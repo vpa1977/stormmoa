@@ -50,7 +50,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 	}
 
 	@Override
-	public Aggregator outputQueue(Map options) {
+	public Filter outputQueue(Map options) {
 		return new OutputQueue(m_config);
 	}
 

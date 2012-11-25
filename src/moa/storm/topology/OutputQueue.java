@@ -21,9 +21,13 @@ import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;
 
-public class OutputQueue implements Aggregator {
+public class OutputQueue implements Filter {
 
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3321348386133534268L;
 	private transient com.rabbitmq.client.Connection amqpConnection;
 	private transient com.rabbitmq.client.Channel ampqChannel;
 	private Properties m_config;
@@ -85,16 +89,8 @@ public class OutputQueue implements Aggregator {
 	}
 	
 
-
 	@Override
-	public Object init(Object batchId, TridentCollector collector) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void aggregate(Object val, TridentTuple tuple,
-			TridentCollector collector) {
+	public boolean isKeep(TridentTuple tuple) {
 		Object prediction = tuple.getValueByField(LearnEvaluateTopology.FIELD_PREDICTION);
 		Object instance = tuple.getValueByField(LearnEvaluateTopology.FIELD_INSTANCE);
 		ArrayList<Object> r = new ArrayList<Object>();
@@ -115,13 +111,7 @@ public class OutputQueue implements Aggregator {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		
-	}
-
-	@Override
-	public void complete(Object val, TridentCollector collector) {
-		// TODO Auto-generated method stub
-		
+		return false;
 	}
 
 }

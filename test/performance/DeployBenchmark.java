@@ -66,22 +66,22 @@ public class DeployBenchmark {
 		BenchmarkingTopology storm = new BenchmarkingTopology("/ml_storm_cluster.properties");
 		storm.setClassiferOption(classifier);
 		
-		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 10000);
-		//conf.put("topology.max.spout.pending",  10000);
+		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 10);
+		
 		HashMap  tridentconfig = new HashMap();
 		tridentconfig.put(storm.BAGGING_ENSEMBLE_SIZE, args[0]);
 		tridentconfig.put("learning.parallelism", args[1]);
 		tridentconfig.put("evaluation.parallelism",args[2]);
 	//	conf.setMaxTaskParallelism(conf, 4);
 		
-		//conf.setNumWorkers(conf, 28);
-		//StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+		conf.setNumWorkers(conf, 28);
+		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
 		
-		LocalCluster cls = new LocalCluster();
+		/*LocalCluster cls = new LocalCluster();
 		LocalDRPC local = new LocalDRPC();
 		tridentconfig.put("rpc", local);
 		
-		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
+		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());*/
 				
 	}
 
