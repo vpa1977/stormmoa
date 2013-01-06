@@ -73,16 +73,20 @@ public class DeployBenchmark {
 		tridentconfig.put("learning.parallelism", args[1]);
 		tridentconfig.put("evaluation.parallelism",args[2]);
 	//	conf.setMaxTaskParallelism(conf, 4);
+		if ("true".equals(System.getProperty("localmode")))
+		{
+			LocalCluster cls = new LocalCluster();
+			LocalDRPC local = new LocalDRPC();
+			tridentconfig.put("rpc", local);
+			cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
+		}
+		else
+		{
+			conf.setNumWorkers(conf, 28);
+			StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+			
+		}
 		
-		conf.setNumWorkers(conf, 28);
-		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
-		
-		/*LocalCluster cls = new LocalCluster();
-		LocalDRPC local = new LocalDRPC();
-		tridentconfig.put("rpc", local);
-		
-		cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());*/
-				
 	}
 
 }

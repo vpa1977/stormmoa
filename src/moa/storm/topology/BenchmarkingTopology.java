@@ -7,6 +7,8 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Map;
 
+import javax.management.RuntimeErrorException;
+
 import moa.storm.scheme.InstanceScheme;
 import moa.streams.generators.RandomTreeGenerator;
 import moa.trident.state.jcs.JCSState;
@@ -22,6 +24,8 @@ import storm.trident.tuple.TridentTuple;
 
 public class BenchmarkingTopology extends StormClusterTopology {
 
+	static int INSTANCE = 0;
+	
 	@Override
 	public StateFactory createFactory(String key) {
 		return JCSState.create(key);
@@ -56,9 +60,9 @@ public class BenchmarkingTopology extends StormClusterTopology {
 			long count = 0;
 			long period = 0;
 			
-			final long MEASUREMENT_DELAY = 5 * 60 * 1000;
+			final long MEASUREMENT_DELAY = 1 * 60 * 1000;
 			
-			final long MEASUREMENT_PERIOD = 5 * 60 * 1000;
+			final long MEASUREMENT_PERIOD = 1 * 60 * 1000;
 		
 			@Override
 			public void cleanup() {
@@ -68,7 +72,8 @@ public class BenchmarkingTopology extends StormClusterTopology {
 
 			@Override
 			public void prepare(Map arg0, TridentOperationContext arg1) {
-				
+				INSTANCE ++;
+				System.out.println("New Instance "+ INSTANCE);
 				
 			}
 
@@ -77,25 +82,30 @@ public class BenchmarkingTopology extends StormClusterTopology {
 				if (m_start == 0 ) 
 					m_start = System.currentTimeMillis();
 				if (System.currentTimeMillis() - m_start > MEASUREMENT_DELAY)
+				{
 					count ++;
+					
+				}
 				if (System.currentTimeMillis() - m_start > MEASUREMENT_DELAY + MEASUREMENT_PERIOD)
 				{
+					
 					writeResult();
-					m_start = 0;
+					m_start = System.currentTimeMillis();
 					period ++;
-				}
+				}  
 				
-				return false;
+				return true;
 			}
 			
 			private void writeResult()
 			{
 				try {
-					File f = new File("/tmp/trident_bench" + InetAddress.getLocalHost().getHostName() + "-" +period + "-"+ System.currentTimeMillis());
+					
+					File f = new File("/tmp/trident_bench"  +INSTANCE+ "-" +period + "-"+ System.currentTimeMillis());
 					FileOutputStream fos = new FileOutputStream(f);
 					String result = "" + count;
 					fos.write(result.getBytes());
-					fos.flush();
+					fos.flush(); 
 					fos.close();
 				}
 				catch (Throwable t)

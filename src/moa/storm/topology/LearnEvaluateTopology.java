@@ -134,6 +134,7 @@ public abstract class LearnEvaluateTopology {
 		}
 		topology.merge(merge).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new BaggingAggregator(),  new Fields(FIELD_PREDICTION));
 		*/
+		
 
 		int par_evaluation = 4;
 		String evaluation_parallelism = (String)options.get("evaluation.parallelism");
@@ -147,8 +148,10 @@ public abstract class LearnEvaluateTopology {
 					stateQuery(classifierState[i],new Fields(FIELD_INSTANCE), 
 								new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)));
 		}
-		topology.merge(merge_queue).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new Fields(FIELD_INSTANCE, FIELD_PREDICTION),new BaggingAggregator(),  new Fields(FIELD_PREDICTION)).
-			each(new Fields(FIELD_PREDICTION, FIELD_INSTANCE), outputQueue(options));
+		
+		topology.merge(merge_queue).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new Fields(FIELD_INSTANCE, FIELD_PREDICTION),new BaggingAggregator(),  new Fields(FIELD_PREDICTION))
+		.each(new Fields(FIELD_INSTANCE,FIELD_PREDICTION), outputQueue(options));
+		
 		//aggregate(new Fields(FIELD_PREDICTION, FIELD_INSTANCE),outputQueue(options),new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
 			
 			
