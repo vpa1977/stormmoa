@@ -52,7 +52,7 @@ public class DeployBenchmark {
 		prp.load(DeployBenchmark.class.getResourceAsStream("/ml_storm_cluster.properties"));
 		
 		String classifier = "";
-		for (int i = 3 ; i < args.length ; i ++ )
+		for (int i = 5 ; i < args.length ; i ++ )
 		{
 			classifier += " " + args[i];
 		}
@@ -65,24 +65,28 @@ public class DeployBenchmark {
 		conf.putAll(config);
 		BenchmarkingTopology storm = new BenchmarkingTopology("/ml_storm_cluster.properties");
 		storm.setClassiferOption(classifier);
-		
+		conf.put("worker.childopts", "-Xmx256m");
+		conf.put("topology.worker.childopts", "-Xmx256m");
 		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 10);
 		
 		HashMap  tridentconfig = new HashMap();
 		tridentconfig.put(storm.BAGGING_ENSEMBLE_SIZE, args[0]);
 		tridentconfig.put("learning.parallelism", args[1]);
 		tridentconfig.put("evaluation.parallelism",args[2]);
+		tridentconfig.put("evaluation_stream.parallelism",args[3]);
+		tridentconfig.put("evaluation_merge.parallelism",args[4]);
 	//	conf.setMaxTaskParallelism(conf, 4);
 		if ("true".equals(System.getProperty("localmode")))
 		{
 			LocalCluster cls = new LocalCluster();
-			LocalDRPC local = new LocalDRPC();
-			tridentconfig.put("rpc", local);
+			//conf.put("topology.spout.max.batch.size", 2);
 			cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
 		}
 		else
 		{
-			conf.setNumWorkers(conf, 28);
+			//conf.setNumWorkers(conf, Integer.parseInt(args[1])+ Integer.parseInt(args[2]) );
+			//conf.put("topology.spout.max.batch.size", 1000);
+			conf.setNumWorkers(256);
 			StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
 			
 		}

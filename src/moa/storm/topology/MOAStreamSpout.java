@@ -11,16 +11,16 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
+import backtype.storm.tuple.Fields;
 
 public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 	
 	private InstanceStream m_stream;
-	private Scheme m_scheme;
 	private SpoutOutputCollector m_collector;
+	private long m_id;
 	
-	public MOAStreamSpout( Scheme scheme, InstanceStream stream)
+	public MOAStreamSpout(InstanceStream stream)
 	{
-		m_scheme = scheme;
 		m_stream = stream;
 	}
 
@@ -31,18 +31,20 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 			SpoutOutputCollector collector) {
 		m_collector = collector;
 		m_stream.restart();
+		m_id = 0;
 	}
 
 	@Override
 	public void nextTuple() {
 		List<Object> message = new ArrayList<Object>();
+		message.add(m_id++);
 		message.add(m_stream.nextInstance());
 		m_collector.emit(message);
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-				declarer.declare(m_scheme.getOutputFields());
+		declarer.declare(new Fields("id","instance"));
 	}
 
 }

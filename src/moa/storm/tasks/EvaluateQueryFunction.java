@@ -29,7 +29,7 @@ public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottab
 
 	public void execute(TridentTuple tuple, LearnerWrapper result,
 			TridentCollector collector) {
-		Object value = tuple.getValue(0);
+		Object value = tuple.getValue(1);
 		Object serializedObject = null;
 		if ( value instanceof String )
 		{
@@ -58,6 +58,7 @@ public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottab
 		{
 			List<Object> objs = new ArrayList<Object>();
 			objs.add( result.getClassifier().getVotesForInstance( (Instance)serializedObject));
+			objs.add( tuple.getValue(0));
 			objs.add( value );
 			collector.emit(objs);
 		}
@@ -69,13 +70,14 @@ public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottab
 	public List<LearnerWrapper> batchRetrieve(ReadOnlySnapshottable<LearnerWrapper> state,
 			List<TridentTuple> args) {
 		LearnerWrapper theClassifier = state.get();
-		
 		ArrayList<LearnerWrapper> list = new ArrayList<LearnerWrapper>();
+		Integer val = new Integer(0);
 		for (TridentTuple t : args)
 		{
-			list.add( theClassifier);
+			list.add(theClassifier);
 		}
 		return list;
 	}
+
 	
 }

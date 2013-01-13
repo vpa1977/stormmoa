@@ -17,11 +17,12 @@ import com.rabbitmq.client.AMQP.Queue;
 
 import storm.trident.operation.Aggregator;
 import storm.trident.operation.Filter;
+import storm.trident.operation.Function;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;
 
-public class OutputQueue implements Filter {
+public class OutputQueue implements Function {
 
 	
 	/**
@@ -90,7 +91,7 @@ public class OutputQueue implements Filter {
 	
 
 	@Override
-	public boolean isKeep(TridentTuple tuple) {
+	public void execute(TridentTuple tuple, TridentCollector collector) {
 		Object prediction = tuple.getValueByField(LearnEvaluateTopology.FIELD_PREDICTION);
 		Object instance = tuple.getValueByField(LearnEvaluateTopology.FIELD_INSTANCE);
 		ArrayList<Object> r = new ArrayList<Object>();
@@ -111,7 +112,6 @@ public class OutputQueue implements Filter {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
-		return false;
 	}
 
 }

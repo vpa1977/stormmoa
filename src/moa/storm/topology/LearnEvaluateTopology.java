@@ -1,11 +1,16 @@
 package moa.storm.topology;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import backtype.storm.LocalDRPC;
+import backtype.storm.generated.GlobalStreamId;
+import backtype.storm.generated.Grouping;
+import backtype.storm.grouping.CustomStreamGrouping;
+import backtype.storm.task.WorkerTopologyContext;
 import backtype.storm.tuple.Fields;
 
 import moa.classifiers.Classifier;
@@ -22,10 +27,11 @@ import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import storm.trident.operation.Aggregator;
 import storm.trident.operation.BaseFilter;
-import storm.trident.operation.Filter;
+import storm.trident.operation.Function;
 import storm.trident.operation.ReducerAggregator;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
+import storm.trident.operation.builtin.Debug;
 import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.StateFactory;
 import storm.trident.state.StateSpec;
@@ -46,6 +52,7 @@ public abstract class LearnEvaluateTopology {
 	
 	private static final String FIELD_STATISTICS = "statistics";
 	public static final String FIELD_PREDICTION = "prediction";
+	public static final String FIELD_ID = "id";
 	public static final String FIELD_INSTANCE = "instance";
 	public static final String RPC_STATS = "stats";
 	public static final String RPC_EVALUATE = "evaluate";
@@ -140,20 +147,29 @@ public abstract class LearnEvaluateTopology {
 		String evaluation_parallelism = (String)options.get("evaluation.parallelism");
 		if (evaluation_parallelism!= null)
 			par_evaluation = Integer.parseInt(evaluation_parallelism);
-		Stream predictionStream = createPredictionStream(options, topology).parallelismHint(par_evaluation);
+		
+		int par_stream = 4;
+		String stream_parallelism = (String)options.get("evaluation_stream.parallelism");
+		if (stream_parallelism!= null)
+			par_stream = Integer.parseInt(stream_parallelism);
+		
+		int par_merge = 4;
+		String merge_parallelism = (String)options.get("evaluation_merge.parallelism");
+		if (merge_parallelism!= null)
+			par_merge = Integer.parseInt(stream_parallelism);
+		
+
+		Stream predictionStream = createPredictionStream(options, topology).parallelismHint(par_stream);
 		ArrayList<Stream> merge_queue = new ArrayList<Stream>();
 		for (int i = 0; i < ensemble_size; i++)
 		{
-			merge_queue.add(predictionStream.
-					stateQuery(classifierState[i],new Fields(FIELD_INSTANCE), 
+			merge_queue.add(predictionStream.each(new Fields(FIELD_ID,FIELD_INSTANCE), new EchoFunction(), new Fields()).parallelismHint(par_evaluation).
+					stateQuery(classifierState[i],new Fields(FIELD_ID,FIELD_INSTANCE), 
 								new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)));
 		}
 		
-		topology.merge(merge_queue).groupBy(new Fields(FIELD_INSTANCE)).aggregate(new Fields(FIELD_INSTANCE, FIELD_PREDICTION),new BaggingAggregator(),  new Fields(FIELD_PREDICTION))
-		.each(new Fields(FIELD_INSTANCE,FIELD_PREDICTION), outputQueue(options));
-		
-		//aggregate(new Fields(FIELD_PREDICTION, FIELD_INSTANCE),outputQueue(options),new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
-			
+		topology.merge(merge_queue).groupBy(new Fields(FIELD_ID)).toStream().partitionAggregate(new Fields(FIELD_PREDICTION,FIELD_ID,FIELD_INSTANCE),new BaggingAggregator(),  
+				new Fields(FIELD_PREDICTION,FIELD_INSTANCE)).parallelismHint(par_merge).each(new Fields(FIELD_PREDICTION,FIELD_INSTANCE), outputQueue(options), new Fields());
 			
 		return topology;
 
@@ -191,10 +207,7 @@ public abstract class LearnEvaluateTopology {
 			par_evaluation = Integer.parseInt(evaluation_parallelism);
 		createPredictionStream(options, topology).parallelismHint(par_evaluation)
 			.stateQuery(classifierState,new Fields(FIELD_INSTANCE), new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)).
-			each(new Fields(FIELD_PREDICTION, FIELD_INSTANCE), outputQueue(options)); 
-		
-				
-			//	aggregate(new Fields(FIELD_PREDICTION, FIELD_INSTANCE),outputQueue(options),new Fields(FIELD_PREDICTION, FIELD_INSTANCE));
+			each(new Fields(FIELD_PREDICTION, FIELD_INSTANCE), outputQueue(options), new Fields()); 
 		
 		return topology;
 	}
@@ -202,7 +215,7 @@ public abstract class LearnEvaluateTopology {
 	
 
 
-	public abstract Filter outputQueue(Map options);
+	public abstract Function outputQueue(Map options);
 
 	public abstract Stream createPredictionStream(Map options, TridentTopology topology);
 	public abstract Stream createLearningStream(Map options, TridentTopology topology);

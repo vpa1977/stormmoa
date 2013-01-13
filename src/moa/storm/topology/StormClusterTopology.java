@@ -25,7 +25,7 @@ import moa.storm.scheme.InstanceScheme;
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
 import storm.trident.operation.Aggregator;
-import storm.trident.operation.Filter;
+import storm.trident.operation.Function;
 import storm.trident.state.StateFactory;
 import storm.trident.state.TransactionalValue;
 import trident.memcached.JSONObjectTransactionalSerializer;
@@ -50,7 +50,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 	}
 
 	@Override
-	public Filter outputQueue(Map options) {
+	public Function outputQueue(Map options) {
 		return new OutputQueue(m_config);
 	}
 
