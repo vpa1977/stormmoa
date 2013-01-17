@@ -33,6 +33,7 @@ import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
 import backtype.storm.cluster.StormClusterState;
+import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.NimbusClient;
@@ -65,8 +66,8 @@ public class DeployBenchmark {
 		conf.putAll(config);
 		BenchmarkingTopology storm = new BenchmarkingTopology("/ml_storm_cluster.properties");
 		storm.setClassiferOption(classifier);
-		conf.put("worker.childopts", "-Xmx256m");
-		conf.put("topology.worker.childopts", "-Xmx256m");
+		//conf.put("worker.childopts", "-Xmx256m");
+		//conf.put("topology.worker.childopts", "-Xmx256m");
 		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 10);
 		
 		HashMap  tridentconfig = new HashMap();
@@ -75,19 +76,33 @@ public class DeployBenchmark {
 		tridentconfig.put("evaluation.parallelism",args[2]);
 		tridentconfig.put("evaluation_stream.parallelism",args[3]);
 		tridentconfig.put("evaluation_merge.parallelism",args[4]);
+		tridentconfig.put("supervisor.worker.start.timeout.secs", 600);
+		
+		
 	//	conf.setMaxTaskParallelism(conf, 4);
 		if ("true".equals(System.getProperty("localmode")))
 		{
+			//StormTopology topology = storm.createOzaBagEvaluator(tridentconfig).build();
+			StormTopology learner = storm.createOzaBagLearner(tridentconfig).build();
+			TopologyPrinter printer = new TopologyPrinter();
+			printer.print(learner);
 			LocalCluster cls = new LocalCluster();
-			//conf.put("topology.spout.max.batch.size", 2);
-			cls.submitTopology(topologyName,  conf,storm.createOzaBag(tridentconfig).build());
+		
+			conf.put("topology.spout.max.batch.size", 2);
+			cls.submitTopology(topologyName+"_learner", conf, learner);
+			//cls.submitTopology(topologyName+"_evaluator",  conf,topology);
+			
+			//Thread.sleep(20 * 1000);
+			//System.exit(0);
 		}
 		else
 		{
 			//conf.setNumWorkers(conf, Integer.parseInt(args[1])+ Integer.parseInt(args[2]) );
 			//conf.put("topology.spout.max.batch.size", 1000);
-			conf.setNumWorkers(256);
-			StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+			//conf.setNumWorkers(256);
+			
+		   StormSubmitter.submitTopology(topologyName+"_learner", conf, storm.createOzaBagLearner(tridentconfig).build());
+			//StormSubmitter.submitTopology(topologyName+"_evaluator", conf, storm.createOzaBagEvaluator(tridentconfig).build());
 			
 		}
 		

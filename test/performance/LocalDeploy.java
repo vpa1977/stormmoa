@@ -233,7 +233,7 @@ public class LocalDeploy {
 		s = s.name("source");
 		for (int i = 0 ;i < 2 ; i ++)
 		{
-		    Stream substream = s.each(new Fields("instance"), new EchoFunction(), new Fields()).parallelismHint(20);//.name("substream "+ i).groupBy(new Fields("instance")).name("grouped stream " +i);
+		    Stream substream = s.each(new Fields("instance"), new EchoFunction(i), new Fields()).parallelismHint(20);//.name("substream "+ i).groupBy(new Fields("instance")).name("grouped stream " +i);
 			streams[i]= substream.stateQuery(state[i], new Fields("instance"),new TestQueryFunction() , new Fields("addition", "random"));//.parallelismHint(2).name("state query "+i);
 		}
 		

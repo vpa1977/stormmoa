@@ -40,14 +40,14 @@ public class BenchmarkingTopology extends StormClusterTopology {
 	public Stream createLearningStream(Map options, TridentTopology topology) {
 		RandomTreeGenerator stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		MOAStreamSpout spout = new MOAStreamSpout(stream);
+		MOAStreamSpout spout = new MOAStreamSpout(stream, 100);
 		return topology.newStream("learning_instances", spout);
 	}
 	
 	public Stream createPredictionStream(Map options, TridentTopology topology) {
 		RandomTreeGenerator stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		MOAStreamSpout spout = new MOAStreamSpout(stream);
+		MOAStreamSpout spout = new MOAStreamSpout(stream,10);
 		return topology.newStream("prediction_instances", spout);
 	}
 
@@ -128,6 +128,7 @@ public class BenchmarkingTopology extends StormClusterTopology {
 					writeResult();
 					m_start = System.currentTimeMillis();
 					period ++;
+					count = 0;
 				}  
 				
 			}

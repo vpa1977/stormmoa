@@ -88,7 +88,7 @@ public class DeployDistributed {
 	//	conf.setMaxTaskParallelism(conf, 4);
 		
 		conf.setNumWorkers(conf, 28);
-		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBag(tridentconfig).build());
+		StormSubmitter.submitTopology(topologyName, conf, storm.createOzaBagLearner(tridentconfig).build());
 		
 		/*LocalCluster cls = new LocalCluster();
 		LocalDRPC local = new LocalDRPC();

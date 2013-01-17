@@ -6,5 +6,6 @@
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/storm-amqp-spout"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/trident-jcs"/>
+	<classpathentry kind="lib" path="classes"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

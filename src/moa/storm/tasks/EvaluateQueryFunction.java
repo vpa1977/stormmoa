@@ -19,11 +19,12 @@ import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
 import storm.trident.operation.builtin.MapGet;
 import storm.trident.state.BaseQueryFunction;
+import storm.trident.state.map.ReadOnlyMapState;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
 import weka.core.Instance;
 
-public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<LearnerWrapper>, LearnerWrapper> implements Serializable
+public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlyMapState<LearnerWrapper>, LearnerWrapper> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 
@@ -67,16 +68,16 @@ public class EvaluateQueryFunction extends BaseQueryFunction<ReadOnlySnapshottab
 		
 	}
 
-	public List<LearnerWrapper> batchRetrieve(ReadOnlySnapshottable<LearnerWrapper> state,
+	public List<LearnerWrapper> batchRetrieve(ReadOnlyMapState<LearnerWrapper> state,
 			List<TridentTuple> args) {
-		LearnerWrapper theClassifier = state.get();
-		ArrayList<LearnerWrapper> list = new ArrayList<LearnerWrapper>();
-		Integer val = new Integer(0);
+		
+		ArrayList<List<Object>> list = new ArrayList<List<Object>>();
 		for (TridentTuple t : args)
 		{
-			list.add(theClassifier);
+			List<Object> tupleValues = t.getValues();
+			list.add(tupleValues);
 		}
-		return list;
+		return state.multiGet(list);
 	}
 
 	

@@ -60,7 +60,7 @@ public class BaggingAggregator implements Aggregator< HashMap<Long, Prediction> 
 	@Override
 	public void aggregate(HashMap<Long, Prediction> val, TridentTuple tuple,
 			TridentCollector collector) {
-		Long id = (Long)tuple.getValueByField(LearnEvaluateTopology.FIELD_ID);
+		Long id = (Long)tuple.getValueByField(LearnEvaluateTopology.FIELD_TUPLE_ID);
 		DoubleVector vote = new DoubleVector( (double[]) tuple.getValueByField(LearnEvaluateTopology.FIELD_PREDICTION));
 		Instance inst = (Instance)tuple.getValueByField(LearnEvaluateTopology.FIELD_INSTANCE);
 		if (vote.sumOfValues() > 0.0) {
@@ -82,7 +82,6 @@ public class BaggingAggregator implements Aggregator< HashMap<Long, Prediction> 
 
 	@Override
 	public void complete( HashMap<Long, Prediction> val, TridentCollector collector) {
-		LOG.info("Completed BATCH>"+batch);
 		Iterator<Prediction> predictions = val.values().iterator();
 		while (predictions.hasNext())
 		{

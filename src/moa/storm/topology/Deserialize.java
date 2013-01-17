@@ -23,7 +23,8 @@ import weka.core.Instance;
  */
 public class Deserialize extends BaseFunction implements Function {
 
- 
+
+	private int m_ensemble_size;
 	
 	@Override
 	public void execute(TridentTuple tuple, TridentCollector collector) {
@@ -55,6 +56,10 @@ public class Deserialize extends BaseFunction implements Function {
 		ArrayList<Object> output = new ArrayList<Object>();
 		output.add(inst);
 		collector.emit(output);
+	}
+
+	public void setEnsembleSize(int ensemble_size) {
+		m_ensemble_size = ensemble_size;
 	}
 
 }

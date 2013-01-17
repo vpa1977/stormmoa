@@ -18,10 +18,13 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 	private InstanceStream m_stream;
 	private SpoutOutputCollector m_collector;
 	private long m_id;
+	private long m_delay;
+
 	
-	public MOAStreamSpout(InstanceStream stream)
+	public MOAStreamSpout(InstanceStream stream, int delay)
 	{
 		m_stream = stream;
+		m_delay = delay;
 	}
 
 	private static final long serialVersionUID = 2296373075956453004L;
@@ -37,14 +40,14 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 	@Override
 	public void nextTuple() {
 		List<Object> message = new ArrayList<Object>();
-		message.add(m_id++);
 		message.add(m_stream.nextInstance());
+		message.add(m_id++);
 		m_collector.emit(message);
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("id","instance"));
+		declarer.declare(new Fields("instance", "tuple_id"));
 	}
 
 }

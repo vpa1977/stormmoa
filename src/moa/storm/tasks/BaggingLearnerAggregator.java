@@ -33,7 +33,7 @@ public class BaggingLearnerAggregator implements ReducerAggregator<LearnerWrappe
 	public LearnerWrapper reduce(LearnerWrapper curr, TridentTuple tuple) {
 		if (curr == null)
 			curr = init();
-		Object value = tuple.getValue(0);
+		Object value = tuple.getValue(1);
 		if (value instanceof Instance){
 			int weight =  MiscUtils.poisson(1.0, this.classifierRandom);
 			if (weight > 0) {
