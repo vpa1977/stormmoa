@@ -3,6 +3,7 @@ package performance;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -39,7 +40,20 @@ class CombinerBolt extends BaseRichBolt implements IRichBolt
 		m_collector = collector;
 		m_predictions = new HashMap<Object, Prediction>();
 		m_task_id = context.getThisTaskId();
-		
+		if (m_ensemble_size == 0)
+		{
+			m_combiner = true;
+			List<Integer> alltasks = context.getThisWorkerTasks();
+			List<Integer> classifiers = context.getComponentTasks("classifier_instance");
+			for (Integer n : classifiers)
+			{
+				if ( alltasks.contains(n))
+				{
+					m_ensemble_size++;	
+				}
+			}
+			System.out.println("Combiner ensemble size "+ m_ensemble_size); 
+		}
 	}
 
 	@Override

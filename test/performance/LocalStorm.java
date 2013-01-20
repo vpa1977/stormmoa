@@ -228,13 +228,13 @@ public class LocalStorm implements Serializable {
 		
 		builder.setBolt("deserialize", new DeserializeBolt(ensemble_size,"learn")).shuffleGrouping("learner_stream");
 		
-		builder.setBolt("evaluate_local_grouping", new EchoBolt("evaluate"), num_workers).shuffleGrouping("p_deserialize", "evaluate");
+		builder.setBolt("evaluate_local_grouping", new EchoBolt("evaluate"), num_workers).customGrouping("p_deserialize", "evaluate", new AllGrouping());
 		
-		builder.setBolt("learn_local_grouping", new EchoBolt("learn"), num_workers).shuffleGrouping("deserialize", "learn");
+		builder.setBolt("learn_local_grouping", new EchoBolt("learn"), num_workers).customGrouping("deserialize", "learn", new AllGrouping());
 		
 		builder.setBolt("classifier_instance", new ClassifierBolt("trees.HoeffdingTree"), ensemble_size).
-			customGrouping("evaluate_local_grouping", "evaluate", new AllGrouping()).
-			customGrouping("learn_local_grouping", "learn", new AllGrouping());
+			customGrouping("evaluate_local_grouping", "evaluate", new LocalGrouping( new IdBasedGrouping())).
+			customGrouping("learn_local_grouping", "learn", new LocalGrouping( new IdBasedGrouping()));
 		
 		
 		builder.setBolt("combine_result", new CombinerBolt (0), Math.max(num_workers*2, num_combiners)).customGrouping("classifier_instance", new LocalGrouping( new IdBasedGrouping()));
