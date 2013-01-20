@@ -28,6 +28,7 @@ import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import storm.trident.operation.Aggregator;
 import storm.trident.operation.BaseFilter;
+import storm.trident.operation.CombinerAggregator;
 import storm.trident.operation.Function;
 import storm.trident.operation.ReducerAggregator;
 import storm.trident.operation.TridentCollector;
@@ -63,60 +64,7 @@ public abstract class LearnEvaluateTopology {
 	public static final String FIELD_CLASSIFIER = "classifier";
 	public static final String BAGGING_ENSEMBLE_SIZE = "bagging.ensemble_size";
 	private static final String FIELD_WEIGHT = "weight";
-	
-	
-	public TridentTopology createOzaBagEvaluator(Map options)
-	{
-		TridentTopology topology = new TridentTopology();
-		
-		LocalDRPC drpc = getDRPC(options);
-		 
-		
-		int ensemble_size = Integer.parseInt(String.valueOf(options.get(BAGGING_ENSEMBLE_SIZE)));
-
-		TridentState[] classifierState = new TridentState[ensemble_size];
-		
- 
-		for (int i = 0; i < ensemble_size; i++)
-		{
-			classifierState[i] = topology.newStaticState(JCSState.create("key_classifier" + i));	
-		}
-		
-
-		
-		int par_evaluation = 4;
-		String evaluation_parallelism = (String)options.get("evaluation.parallelism");
-		if (evaluation_parallelism!= null)
-			par_evaluation = Integer.parseInt(evaluation_parallelism);
-		
-		int par_stream = 4;
-		String stream_parallelism = (String)options.get("evaluation_stream.parallelism");
-		if (stream_parallelism!= null)
-			par_stream = Integer.parseInt(stream_parallelism);
-		
-		int par_merge = 4;
-		String merge_parallelism = (String)options.get("evaluation_merge.parallelism");
-		if (merge_parallelism!= null)
-			par_merge = Integer.parseInt(stream_parallelism);
-		
-
-		Stream predictionStream = createPredictionStream(options, topology).parallelismHint(par_stream).name("prediction_stream");
-		ArrayList<Stream> merge_queue = new ArrayList<Stream>();
-		for (int i = 0; i < ensemble_size; i++)
-		{
-			merge_queue.add(predictionStream.
-					each(new Fields(FIELD_ID,FIELD_INSTANCE), new EchoFunction(i), new Fields()).parallelismHint(par_evaluation).name("predicting_echo_"+i).
-					stateQuery(classifierState[i],new Fields(FIELD_ID,FIELD_INSTANCE), 
-								new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)));
-		}
-		
-		topology.merge(merge_queue).groupBy(new Fields(FIELD_ID)).toStream().name("partition_aggregate").partitionAggregate(new Fields(FIELD_PREDICTION,FIELD_ID,FIELD_INSTANCE),new BaggingAggregator(),  
-				new Fields(FIELD_PREDICTION,FIELD_INSTANCE)).parallelismHint(par_merge).each(new Fields(FIELD_PREDICTION,FIELD_INSTANCE), outputQueue(options), new Fields());
-
-			
-		return topology;
-
-	}
+	private static final String COMBINED_PREDICTION = "combined_prediction";
 	
 	
 	public TridentTopology createOzaBagLearner(Map options)
@@ -151,10 +99,10 @@ public abstract class LearnEvaluateTopology {
 				new BaggingLearnerAggregator(new LearnerWrapper( getClassifier(options) )), new Fields()).parallelismHint(ensemble_size);
 		
 		
-		int par_evaluation = 1;
-		String evaluation_parallelism = (String)options.get("evaluation.parallelism");
-		if (evaluation_parallelism!= null)
-			par_evaluation = Integer.parseInt(evaluation_parallelism);
+		
+		deserialize = new Deserialize();
+		deserialize.setEnsembleSize( ensemble_size );
+
 		
 		int par_stream = 1;
 		String stream_parallelism = (String)options.get("evaluation_stream.parallelism");
@@ -176,15 +124,18 @@ public abstract class LearnEvaluateTopology {
 			toMerge.add( predictionStream.each(new Fields(FIELD_INSTANCE,FIELD_TUPLE_ID), new EchoFunction(i), new Fields(FIELD_ID)));
 		}
 		predictionStream =topology.merge(toMerge);
-		predictionStream.stateQuery(ensemble,new Fields(FIELD_ID,FIELD_INSTANCE,FIELD_TUPLE_ID), 
-					new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)).groupBy(new Fields(FIELD_TUPLE_ID)).
-					partitionAggregate(new Fields(FIELD_PREDICTION,FIELD_ID,FIELD_TUPLE_ID,FIELD_INSTANCE),new BaggingAggregator(),new Fields(FIELD_INSTANCE,FIELD_PREDICTION)).
+		predictionStream.groupBy(new Fields(FIELD_ID)).stateQuery(ensemble,new Fields(FIELD_ID,FIELD_INSTANCE,FIELD_TUPLE_ID), 
+					new EvaluateQueryFunction(), new Fields(FIELD_PREDICTION)).parallelismHint(ensemble_size).
+					//groupBy(new Fields(FIELD_TUPLE_ID)).
+					//aggregate(new Fields(FIELD_PREDICTION,FIELD_ID,FIELD_TUPLE_ID,FIELD_INSTANCE),new BaggingCombiner(),new Fields(COMBINED_PREDICTION)).
+					//each(new Fields(COMBINED_PREDICTION), outputQueue(options), new Fields());
+					aggregate(new Fields(FIELD_PREDICTION,FIELD_ID,FIELD_TUPLE_ID,FIELD_INSTANCE),new BaggingAggregator(),new Fields(FIELD_INSTANCE,FIELD_PREDICTION)).
 					each(new Fields(FIELD_PREDICTION,FIELD_INSTANCE), outputQueue(options), new Fields());
-
 
 		return topology;
 
 	}
+
 
 	public TridentTopology create(Map options)
 	{

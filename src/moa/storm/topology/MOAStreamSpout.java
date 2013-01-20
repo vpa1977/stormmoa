@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import weka.core.Instance;
+
 import moa.streams.InstanceStream;
 import backtype.storm.spout.Scheme;
 import backtype.storm.spout.SpoutOutputCollector;
@@ -15,11 +17,20 @@ import backtype.storm.tuple.Fields;
 
 public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 	
+
+	@Override
+	public void ack(Object msgId) {
+		// TODO Auto-generated method stub
+		super.ack(msgId);
+	}
+
 	private InstanceStream m_stream;
 	private SpoutOutputCollector m_collector;
 	private long m_id;
+	private int m_key;
 	private long m_delay;
-
+	private long m_sent;
+	private long m_acked;
 	
 	public MOAStreamSpout(InstanceStream stream, int delay)
 	{
@@ -35,19 +46,32 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 		m_collector = collector;
 		m_stream.restart();
 		m_id = 0;
+		m_acked= 0;
+		m_key = context.getThisTaskId();
 	}
 
 	@Override
 	public void nextTuple() {
-		List<Object> message = new ArrayList<Object>();
-		message.add(m_stream.nextInstance());
-		message.add(m_id++);
-		m_collector.emit(message);
+			if (m_delay == 0 || m_id < m_delay ) 
+			{
+				List<Object> message = new ArrayList<Object>();
+				ArrayList<Instance> instances = new ArrayList<Instance>();
+				for (int i = 0 ; i < 100 ; i++)
+					instances.add(m_stream.nextInstance());
+				message.add(instances);
+				m_collector.emit(message, new MessageIdentifier(m_key,m_id++));
+				if (m_id % 10000 == 0 && m_delay == 0)
+				{
+					System.out.println("Emitted "+m_id+" tuples");
+				}
+				
+			}
+		
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("instance", "tuple_id"));
+		declarer.declare(new Fields("instance"));
 	}
 
 }
