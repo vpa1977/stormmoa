@@ -4,7 +4,6 @@ import moa.classifiers.Classifier;
 import moa.core.DoubleVector;
 import moa.options.ClassOption;
 import moa.options.Option;
-import moa.streams.InstanceStream;
 import moa.streams.generators.RandomTreeGenerator;
 
 public class FastRun {
@@ -39,7 +38,10 @@ public class FastRun {
 				vote = new DoubleVector(cls.getVotesForInstance(stream.nextInstance()));
 			}
 			long end = System.currentTimeMillis()- clock;
-			System.out.println("100k in "+ (end));
+			//System.out.println("100k in "+ (end));
+			double oneTuple = (double)end / (double)100000;
+			double tuples_sec = 1000/oneTuple;
+			System.out.println("Tuples/sec "+ tuples_sec);
 		}
 		System.out.println(vote);
 		

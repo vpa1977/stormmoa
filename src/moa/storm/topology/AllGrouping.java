@@ -1,8 +1,6 @@
 package moa.storm.topology;
 
-import java.util.ArrayList;
 import java.util.List;
-
 
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.grouping.CustomStreamGrouping;

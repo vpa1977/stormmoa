@@ -2,7 +2,6 @@ package moa.storm.tasks;
 
 import moa.classifiers.Classifier;
 import moa.evaluation.ClassificationPerformanceEvaluator;
-import storm.trident.operation.CombinerAggregator;
 import storm.trident.operation.ReducerAggregator;
 import storm.trident.tuple.TridentTuple;
 import weka.core.Instance;

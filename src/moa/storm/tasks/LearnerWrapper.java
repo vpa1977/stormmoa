@@ -2,10 +2,9 @@ package moa.storm.tasks;
 
 import java.io.Serializable;
 
-import weka.core.Instance;
-
 import moa.classifiers.Classifier;
 import moa.evaluation.ClassificationPerformanceEvaluator;
+import weka.core.Instance;
 
 public class LearnerWrapper implements Serializable{
 	

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import storm.trident.operation.BaseFunction;
-import storm.trident.operation.Filter;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;

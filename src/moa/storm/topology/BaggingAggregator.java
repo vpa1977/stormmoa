@@ -4,12 +4,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import org.apache.log4j.Logger;
-
-
 import java.util.Map;
 
 import moa.core.DoubleVector;
+
+import org.apache.log4j.Logger;
 
 import storm.trident.operation.Aggregator;
 import storm.trident.operation.CombinerAggregator;

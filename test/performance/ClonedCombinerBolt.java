@@ -2,12 +2,11 @@ package performance;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import moa.core.DoubleVector;
+import moa.storm.topology.ClassifierBolt;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -17,7 +16,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-public class CombinerBolt extends BaseRichBolt implements IRichBolt 
+public class ClonedCombinerBolt extends BaseRichBolt implements IRichBolt 
 {
 	private long m_combiner_stat = 0;
 	private long m_tuple_stat = 0;
@@ -27,15 +26,7 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 	private int m_task_id;
 	private boolean m_combiner = false;
 	private long m_emit_time;
-	private String m_component_name;
-	
-	public CombinerBolt(String component_name)
-	{
-		m_component_name = component_name;
-		m_ensemble_size = -1;
-	}
-	
-	public CombinerBolt(int ensemble_size)
+	public ClonedCombinerBolt(int ensemble_size)
 	{
 		m_ensemble_size = ensemble_size;
 
@@ -47,29 +38,29 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 		m_collector = collector;
 		m_predictions = new HashMap<Object, Prediction>();
 		m_task_id = context.getThisTaskId();
-		if (m_component_name != null)
+		int assigned_tasks = 0;
+		List<Integer> alltasks = context.getThisWorkerTasks();
+		List<Integer> classifiers = context.getComponentTasks("evaluator");
+		for (Integer n : classifiers)
 		{
-			m_combiner = true;
-			m_ensemble_size = 0;
-			List<Integer> alltasks = context.getThisWorkerTasks();
-			List<Integer> classifiers = context.getComponentTasks(m_component_name);
-			for (Integer n : classifiers)
+			if ( alltasks.contains(n))
 			{
-				if ( alltasks.contains(n))
-				{
-					m_ensemble_size++;	
-				}
+				assigned_tasks++;	
 			}
-			System.out.println("Combiner ensemble size "+ m_ensemble_size);
-			if (m_ensemble_size < 1 )
-				throw new RuntimeException("Unable to instantiate combiner - ensemble size is less than 1");
 		}
+		if (assigned_tasks % m_ensemble_size > 0) 
+			throw new RuntimeException("Unable to deploy the topology - the ensemble is split between machines");
+		
 	}
 
 	@Override
 	public void execute(Tuple input) {
+		if (m_ensemble_size == 0)
+		{
+			m_ensemble_size = ClassifierBolt.INSTANCES;
+			m_combiner = true;
+		}
 		int numVotes = input.getInteger(3).intValue();
-		m_emit_time += System.currentTimeMillis()  - input.getLong(4).longValue();
 		
 		Object instance_id = input.getValue(0);
 		ArrayList<Instance> instance = (ArrayList<Instance>)input.getValue(1);
@@ -87,22 +78,6 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 			prediction.addVotes( vect , numVotes);
 			m_collector.ack(input);
 		}
-		m_tuple_stat ++;
-		if (m_tuple_stat % 10000 == 0 && !m_combiner)
-		{
-			int size = m_predictions.size();
-			int half_count =0;
-			Iterator<Entry<Object,Prediction>> it = m_predictions.entrySet().iterator();
-			while  (it.hasNext())
-			{
-				if (it.next().getValue().m_num_votes == 2) 
-				{
-					half_count ++;
-				}
-			}
-			System.out.println("Tuple Stat "+ m_tuple_stat + " for " + m_task_id + " avg emit "+ (m_emit_time/m_tuple_stat));
-			System.out.println("Half_count "+ half_count + " out of "+ size + " for tuples "+ (m_tuple_stat/m_ensemble_size));
-		}
 		
 		if (prediction.m_num_votes == m_ensemble_size)
 		{
@@ -119,9 +94,7 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 			
 			output.add(prediction.m_votes);
 			output.add( prediction.m_num_votes);
-			output.add( System.currentTimeMillis());
 			m_collector.emit(prediction.m_input,output);
-			
 			m_collector.ack(prediction.m_input);
 			m_predictions.remove(instance_id);
 		}
@@ -129,7 +102,7 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("instance_id", "instance", "prediction","votes", "timestamp"));
+		declarer.declare(new Fields("instance_id", "instance", "prediction","votes"));
 	}
 	
 }

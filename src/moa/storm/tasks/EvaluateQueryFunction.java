@@ -1,26 +1,17 @@
 package moa.storm.tasks;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
-import moa.classifiers.Classifier;
-
-import storm.trident.operation.Function;
 import storm.trident.operation.TridentCollector;
-import storm.trident.operation.TridentOperationContext;
-import storm.trident.operation.builtin.MapGet;
 import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.map.ReadOnlyMapState;
-import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
 import weka.core.Instance;
 

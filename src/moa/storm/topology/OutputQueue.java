@@ -3,24 +3,18 @@ package moa.storm.topology;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.AMQP.Queue;
-
-import storm.trident.operation.Aggregator;
-import storm.trident.operation.Filter;
 import storm.trident.operation.Function;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;
+
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.ConnectionFactory;
 
 public class OutputQueue implements Function {
 

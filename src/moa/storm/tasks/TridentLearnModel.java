@@ -3,8 +3,6 @@ package moa.storm.tasks;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -12,19 +10,14 @@ import moa.classifiers.Classifier;
 import moa.core.ObjectRepository;
 import moa.options.ClassOption;
 import moa.options.IntOption;
-import moa.storm.tasks.EventEmitter.MOAQueryFunction;
 import moa.streams.InstanceStream;
 import moa.tasks.TaskMonitor;
 import storm.trident.Stream;
 import storm.trident.TridentState;
 import storm.trident.TridentTopology;
 import storm.trident.state.StateFactory;
-import trident.memcached.MemcachedState;
 import backtype.storm.Config;
-import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
-import backtype.storm.StormSubmitter;
-import backtype.storm.generated.DRPCRequest;
 import backtype.storm.tuple.Fields;
 
 public class TridentLearnModel extends BaseEmitTask {

@@ -12,7 +12,6 @@ import moa.core.MiscUtils;
 import moa.options.ClassOption;
 import moa.options.Option;
 import moa.storm.tasks.LearnerWrapper;
-import moa.trident.state.jcs.JCSState;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;

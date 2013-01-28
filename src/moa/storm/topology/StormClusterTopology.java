@@ -6,31 +6,23 @@ import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.AMQP.Queue;
-import com.rapportive.storm.amqp.SharedQueueWithBinding;
-import com.rapportive.storm.spout.AMQPSpout;
-
 import moa.classifiers.Classifier;
 import moa.options.ClassOption;
 import moa.options.Option;
-import moa.options.Options;
 import moa.storm.scheme.InstanceScheme;
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
-import storm.trident.operation.Aggregator;
 import storm.trident.operation.Function;
 import storm.trident.state.StateFactory;
-import storm.trident.state.TransactionalValue;
-import trident.memcached.JSONObjectTransactionalSerializer;
-import trident.memcached.MemcachedState;
 import backtype.storm.LocalDRPC;
+
+import com.rapportive.storm.amqp.SharedQueueWithBinding;
+import com.rapportive.storm.spout.AMQPSpout;
 
 public class StormClusterTopology  extends LearnEvaluateTopology implements Serializable {
 	
@@ -110,7 +102,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 				memcachedHosts.add( addr);
 			}
 		}
-		return MemcachedState.nonTransactional(memcachedHosts);
+		return null;
 		
 	}
 
@@ -157,10 +149,7 @@ public class StormClusterTopology  extends LearnEvaluateTopology implements Seri
 				memcachedHosts.add( addr);
 			}
 		}
-		MemcachedState.Options<TransactionalValue> opts = new MemcachedState.Options<TransactionalValue>();
-		opts.globalKey = string;
-		opts.serializer = new JSONObjectTransactionalSerializer();
-		return MemcachedState.transactional(memcachedHosts, opts);	
+		return null;	
 		}
 
 }

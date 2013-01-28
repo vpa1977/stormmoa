@@ -125,8 +125,6 @@ public class LocalStorm implements Serializable {
 		long count = 0;
 		long period = 0;
 		
-		final long MEASUREMENT_DELAY = 0;//1 * 60 * 1000;
-		
 		final long MEASUREMENT_PERIOD = 1 * 60 * 1000;
 	
 		@Override
@@ -149,13 +147,15 @@ public class LocalStorm implements Serializable {
 
 
 		
-		private void writeResult()
+		private void writeResult(long period)
 		{
 			try {
 				
+				long tup_sec = count * GLOBAL_BATCH_SIZE * 1000 /period;
+				
 				File f = new File("/home/vp37/trident_bench"+ InetAddress.getLocalHost().getHostName() + "-" + getPid() + "-" + m_instance);
 				FileOutputStream fos = new FileOutputStream(f);
-				String result = "" + count*GLOBAL_BATCH_SIZE;
+				String result = "" +tup_sec;
 				fos.write(result.getBytes());
 				fos.write(" \r\n".getBytes());
 				fos.flush(); 
@@ -172,18 +172,15 @@ public class LocalStorm implements Serializable {
 			m_collector.ack(tuple);
 			if (m_start == 0 ) 
 				m_start = System.currentTimeMillis();
-			if (System.currentTimeMillis() - m_start > MEASUREMENT_DELAY)
-			{
-				count ++;
-				if (count %10000 == 0)
-					System.out.println("processed "+ count);
-			}
-			if (System.currentTimeMillis() - m_start > MEASUREMENT_DELAY + MEASUREMENT_PERIOD)
+			long current =System.currentTimeMillis(); 
+			count ++;
+			if (count %10000 == 0)
+				System.out.println("processed "+ count);
+			if (current - m_start > MEASUREMENT_PERIOD)
 			{
 				LOG.info("Writing Result");
-				writeResult();
+				writeResult(current - m_start);
 				m_start = System.currentTimeMillis();
-				period ++;
 				count = 0;
 			}  
 			
@@ -214,39 +211,42 @@ public class LocalStorm implements Serializable {
 		TopologyBuilder builder = new TopologyBuilder();
 		int ensemble_size = Integer.parseInt(args[0]);
 		int num_workers = Integer.parseInt(args[1]);
-		int num_combiners = Integer.parseInt(args[2]);
-		int num_aggregators = Integer.parseInt(args[3]);
-		int num_pending = Integer.parseInt(args[4]);
+		int num_classifiers = Integer.parseInt(args[2]);
+		int num_combiners = Integer.parseInt(args[3]);
+		int num_aggregators = Integer.parseInt(args[4]);
+		int num_pending = Integer.parseInt(args[5]);
 
 		RandomTreeGenerator stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		builder.setSpout("learner_stream", new MOAStreamSpout(stream, 10));
+		builder.setSpout("learner_stream", new MOAStreamSpout(stream, 100));
 		stream = new RandomTreeGenerator();
 		stream.prepareForUse();
 		builder.setSpout("prediction_stream", new MOAStreamSpout(stream, 0));
 		builder.setBolt("p_deserialize", new DeserializeBolt(ensemble_size,"evaluate"),num_workers).shuffleGrouping("prediction_stream");
 		
-		builder.setBolt("deserialize", new DeserializeBolt(ensemble_size,"learn")).shuffleGrouping("learner_stream");
+		builder.setBolt("deserialize", new DeserializeBolt(ensemble_size,"learn"),num_workers).shuffleGrouping("learner_stream");
 		
 		builder.setBolt("evaluate_local_grouping", new EchoBolt("evaluate"), num_workers).customGrouping("p_deserialize", "evaluate", new AllGrouping());
 		
 		builder.setBolt("learn_local_grouping", new EchoBolt("learn"), num_workers).customGrouping("deserialize", "learn", new AllGrouping());
 		
-		builder.setBolt("classifier_instance", new ClassifierBolt("trees.HoeffdingTree"), ensemble_size).
+		builder.setBolt("classifier_instance", new ClassifierBolt("trees.HoeffdingTree"),Math.max(num_classifiers,num_workers)).setNumTasks(ensemble_size).
 			customGrouping("evaluate_local_grouping", "evaluate", new AllLocalGrouping()).
 			customGrouping("learn_local_grouping", "learn", new AllLocalGrouping());
 		
 		
-		builder.setBolt("combine_result", new CombinerBolt (0), Math.max(num_workers*2, num_combiners)).customGrouping("classifier_instance", new LocalGrouping( new IdBasedGrouping()));
+		builder.setBolt("combine_result", new CombinerBolt ("classifier_instance"), Math.max(num_workers, num_combiners)).customGrouping("classifier_instance", new LocalGrouping( new IdBasedGrouping()))
+		.setNumTasks(Math.max(num_workers, num_combiners));
 		
 		//builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("combine_result", new LocalGrouping(new IdBasedGrouping()));
 		
-		builder.setBolt("aggregate_result", new CombinerBolt(ensemble_size), Math.max(num_workers*2, num_aggregators) ).customGrouping("combine_result", new IdBasedGrouping());
+		builder.setBolt("aggregate_result", new CombinerBolt(ensemble_size), Math.max(num_workers, num_combiners)).customGrouping("combine_result", new IdBasedGrouping()).setNumTasks(Math.max(num_workers, num_aggregators) );
 		
 		builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));
 		
 		conf.setNumAckers(num_workers);
 		conf.setNumWorkers(num_workers);
+		
 		conf.setMaxSpoutPending(num_pending);
 		if ("true".equals(System.getProperty("localmode")))
 		{
@@ -257,7 +257,7 @@ public class LocalStorm implements Serializable {
 		}
 		else
 		{
-			StormSubmitter.submitTopology("noack", conf, builder.createTopology());
+			StormSubmitter.submitTopology("noack"+ System.currentTimeMillis(), conf, builder.createTopology());
 		}
 		
 		

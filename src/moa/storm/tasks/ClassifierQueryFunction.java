@@ -9,7 +9,6 @@ import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
 
-import moa.classifiers.Classifier;
 import storm.trident.operation.TridentCollector;
 import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;

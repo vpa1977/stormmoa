@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import weka.core.Instance;
-
 import moa.streams.InstanceStream;
-import backtype.storm.spout.Scheme;
+import weka.core.Instance;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;

@@ -3,11 +3,8 @@ package moa.storm.tasks;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import moa.classifiers.Classifier;
 import moa.core.Measurement;
@@ -29,28 +26,17 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import storm.trident.Stream;
 import storm.trident.TridentState;
 import storm.trident.TridentTopology;
-import storm.trident.fluent.GroupedStream;
-import storm.trident.fluent.IAggregatableStream;
-import storm.trident.operation.Function;
 import storm.trident.operation.ReducerAggregator;
 import storm.trident.operation.TridentCollector;
-import storm.trident.operation.TridentOperationContext;
 import storm.trident.operation.builtin.Debug;
-import storm.trident.operation.builtin.MapGet;
-import storm.trident.spout.RichSpoutBatchExecutor;
 import storm.trident.state.BaseQueryFunction;
-import storm.trident.state.QueryFunction;
-import storm.trident.state.State;
 import storm.trident.state.StateFactory;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
-import storm.trident.testing.MemoryMapState;
 import storm.trident.tuple.TridentTuple;
-import trident.memcached.MemcachedState;
 import weka.core.Instance;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
-import backtype.storm.topology.IRichStateSpout;
 import backtype.storm.tuple.Fields;
 
 import com.rabbitmq.client.AMQP.Queue;
@@ -58,12 +44,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rapportive.storm.amqp.SharedQueueWithBinding;
 import com.rapportive.storm.spout.AMQPSpout;
-import com.thimbleware.jmemcached.CacheImpl;
-import com.thimbleware.jmemcached.Key;
-import com.thimbleware.jmemcached.LocalCacheElement;
-import com.thimbleware.jmemcached.MemCacheDaemon;
-import com.thimbleware.jmemcached.storage.CacheStorage;
-import com.thimbleware.jmemcached.storage.hash.ConcurrentLinkedHashMap;
 
 /**
  * Sends MOA Data Stream events to the Storm Cluster.
@@ -73,21 +53,11 @@ import com.thimbleware.jmemcached.storage.hash.ConcurrentLinkedHashMap;
  */
 public class EventEmitter extends MainTask {
 	
-	private static final MemCacheDaemon<LocalCacheElement> daemon =
-            new MemCacheDaemon<LocalCacheElement>();
+	
 	
 	private static void startLocalMemcacheInstance(int port) {
         
-        if (!daemon.isRunning())
-        {
-        	System.out.println("Starting local memcache");
-        	CacheStorage<Key, LocalCacheElement> storage =
-        			ConcurrentLinkedHashMap.create(
-                        ConcurrentLinkedHashMap.EvictionPolicy.FIFO, 100, 1024*500);
-        	daemon.setCache(new CacheImpl(storage));
-        	daemon.setAddr(new InetSocketAddress("localhost", port));
-        	daemon.start();
-        }
+    
     }
 	
 	class MOAQueryFunction extends BaseQueryFunction<ReadOnlySnapshottable<Long>, Long> implements Serializable
@@ -133,7 +103,7 @@ public class EventEmitter extends MainTask {
 			LocalCluster cluster = new LocalCluster();
 			int PORT = 10001;
 	        startLocalMemcacheInstance(PORT);
-	        StateFactory memcached = MemcachedState.nonTransactional(Arrays.asList(new InetSocketAddress("localhost", PORT)));
+	        StateFactory memcached = null;//MemcachedState.nonTransactional(Arrays.asList(new InetSocketAddress("localhost", PORT)));
 	        
 			Config conf = new Config();
 			// conf.setDebug(true);

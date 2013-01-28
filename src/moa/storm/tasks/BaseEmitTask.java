@@ -3,23 +3,23 @@ package moa.storm.tasks;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.AMQP.Queue;
-import com.rapportive.storm.amqp.SharedQueueWithBinding;
-import com.rapportive.storm.spout.AMQPSpout;
-
-import storm.trident.Stream;
-import storm.trident.TridentTopology;
-import weka.core.Instance;
 import moa.options.ClassOption;
 import moa.options.IntOption;
 import moa.options.StringOption;
 import moa.storm.scheme.InstanceScheme;
 import moa.streams.InstanceStream;
 import moa.tasks.MainTask;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
+
+import storm.trident.Stream;
+import storm.trident.TridentTopology;
+
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rapportive.storm.amqp.SharedQueueWithBinding;
+import com.rapportive.storm.spout.AMQPSpout;
 
 public abstract class BaseEmitTask extends MainTask {
 	

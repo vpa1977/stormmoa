@@ -12,7 +12,6 @@ import java.util.List;
 import javax.xml.bind.DatatypeConverter;
 
 import org.json.simple.JSONValue;
-import org.mortbay.io.ByteArrayBuffer;
 
 import storm.trident.state.Serializer;
 import storm.trident.state.TransactionalValue;

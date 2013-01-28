@@ -3,24 +3,15 @@ package moa.storm.topology;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Map;
 
-import javax.management.RuntimeErrorException;
+import moa.streams.generators.RandomTreeGenerator;
 
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.minlog.Log;
-
-import moa.storm.scheme.InstanceScheme;
-import moa.streams.generators.RandomTreeGenerator;
-import moa.trident.state.jcs.JCSState;
-
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
-import storm.trident.operation.Aggregator;
-import storm.trident.operation.Filter;
 import storm.trident.operation.Function;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
@@ -33,7 +24,7 @@ public class BenchmarkingTopology extends StormClusterTopology {
 	public static Logger LOG = Logger.getLogger(BenchmarkingTopology.class);
 	@Override
 	public StateFactory createFactory(String key) {
-		return JCSState.create(key);
+		return null;//JCSState.create(key);
 	}
 
 	@Override

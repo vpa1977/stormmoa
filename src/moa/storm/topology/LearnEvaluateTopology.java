@@ -1,45 +1,20 @@
 package moa.storm.topology;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
-
-import backtype.storm.LocalDRPC;
-import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.generated.Grouping;
-import backtype.storm.grouping.CustomStreamGrouping;
-import backtype.storm.task.WorkerTopologyContext;
-import backtype.storm.tuple.Fields;
 
 import moa.classifiers.Classifier;
-import moa.core.MiscUtils;
 import moa.storm.tasks.BaggingLearnerAggregator;
-import moa.storm.tasks.ClassifierQueryFunction;
 import moa.storm.tasks.EvaluateQueryFunction;
 import moa.storm.tasks.LearnerAggregator;
 import moa.storm.tasks.LearnerWrapper;
-import moa.storm.tasks.StatQueryFunction;
-import moa.trident.state.jcs.JCSState;
-
 import storm.trident.Stream;
 import storm.trident.TridentState;
 import storm.trident.TridentTopology;
-import storm.trident.operation.Aggregator;
-import storm.trident.operation.BaseFilter;
-import storm.trident.operation.CombinerAggregator;
 import storm.trident.operation.Function;
-import storm.trident.operation.ReducerAggregator;
-import storm.trident.operation.TridentCollector;
-import storm.trident.operation.TridentOperationContext;
-import storm.trident.operation.builtin.Debug;
-import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.StateFactory;
-import storm.trident.state.StateSpec;
-import storm.trident.state.snapshot.ReadOnlySnapshottable;
-import storm.trident.tuple.TridentTuple;
-import weka.core.Instance;
+import backtype.storm.LocalDRPC;
+import backtype.storm.tuple.Fields;
 
 
 /** 

@@ -3,15 +3,9 @@ package moa.storm.tasks;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import moa.classifiers.Classifier;
 
 import storm.trident.operation.TridentCollector;
-import storm.trident.operation.TridentOperationContext;
 import storm.trident.state.BaseQueryFunction;
-import storm.trident.state.QueryFunction;
-import storm.trident.state.State;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
 

@@ -2,48 +2,31 @@ package moa.storm.tasks;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintStream;
 import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.thrift7.TException;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.AMQP.Queue;
-
-import storm.trident.Stream;
-import storm.trident.TridentState;
-import storm.trident.TridentTopology;
-import storm.trident.state.StateFactory;
-
-import backtype.storm.Config;
-import backtype.storm.LocalDRPC;
-import backtype.storm.generated.DRPCExecutionException;
-import backtype.storm.tuple.Fields;
-import backtype.storm.utils.DRPCClient;
-
-import weka.core.Instance;
-import weka.core.Utils;
 import moa.classifiers.Classifier;
 import moa.core.ObjectRepository;
-import moa.evaluation.ClassificationPerformanceEvaluator;
-import moa.evaluation.LearningEvaluation;
 import moa.options.ClassOption;
-import moa.options.FileOption;
 import moa.options.FlagOption;
 import moa.options.IntOption;
-import moa.options.StringOption;
 import moa.streams.InstanceStream;
 import moa.tasks.MainTask;
 import moa.tasks.TaskMonitor;
+
+import org.apache.thrift7.TException;
+
+import backtype.storm.generated.DRPCExecutionException;
+import backtype.storm.utils.DRPCClient;
+
+import com.rabbitmq.client.AMQP.Queue;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 public class TridentCommunicate extends MainTask {
 

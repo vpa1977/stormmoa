@@ -1,30 +1,24 @@
 package performance;
 
-import java.util.List;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import javax.xml.bind.DatatypeConverter;
 
-import moa.storm.topology.BaggingAggregator;
 import moa.storm.topology.BenchmarkingTopology;
 import moa.storm.topology.EchoFunction;
-import moa.storm.topology.StormClusterTopology;
 import storm.trident.Stream;
 import storm.trident.TridentState;
 import storm.trident.TridentTopology;
-import storm.trident.fluent.GroupedStream;
 import storm.trident.operation.Aggregator;
-import storm.trident.operation.BaseFilter;
 import storm.trident.operation.BaseFunction;
-import storm.trident.operation.ReducerAggregator;
 import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentOperationContext;
 import storm.trident.state.BaseQueryFunction;
@@ -37,6 +31,7 @@ import weka.core.Instance;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.task.IMetricsContext;
 import backtype.storm.tuple.Fields;
 
 public class LocalDeploy {
@@ -191,8 +186,12 @@ public class LocalDeploy {
                  _map = map;
              }
 
+
+
 			@Override
-			public State makeState(Map arg0, int arg1, int arg2) {
+			public State makeState(Map conf, IMetricsContext metrics,
+					int partitionIndex, int numPartitions) {
+				// TODO Auto-generated method stub
 				return new StaticSingleKeyMapState(_map);
 			}
              

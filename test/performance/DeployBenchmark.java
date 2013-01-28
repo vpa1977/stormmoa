@@ -1,43 +1,16 @@
 package performance;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import com.rapportive.storm.spout.AMQPSpout;
 
 import moa.storm.topology.BenchmarkingTopology;
-import moa.storm.topology.StormClusterTopology;
-
-import storm.trident.Stream;
-import storm.trident.TridentTopology;
-import storm.trident.operation.Aggregator;
-import storm.trident.operation.BaseFilter;
-import storm.trident.operation.CombinerAggregator;
-import storm.trident.operation.ReducerAggregator;
-import storm.trident.operation.builtin.Debug;
-import storm.trident.state.StateFactory;
-import storm.trident.testing.FixedBatchSpout;
-import storm.trident.testing.MemoryMapState;
-import storm.trident.tuple.TridentTuple;
-
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
-import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
-import backtype.storm.cluster.StormClusterState;
 import backtype.storm.generated.StormTopology;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
-import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
+
+import com.rapportive.storm.spout.AMQPSpout;
 
 public class DeployBenchmark {
 	

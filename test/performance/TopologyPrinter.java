@@ -2,7 +2,6 @@ package performance;
 
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -13,24 +12,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jgrapht.DirectedGraph;
-
-import storm.trident.operation.Function;
 import storm.trident.planner.Node;
 import storm.trident.planner.ProcessorNode;
-import storm.trident.planner.SubtopologyBolt;
 import storm.trident.planner.TridentProcessor;
 import storm.trident.planner.processor.EachProcessor;
 import storm.trident.spout.TridentSpoutCoordinator;
 import storm.trident.spout.TridentSpoutExecutor;
 import storm.trident.topology.TridentBoltExecutor;
-
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.ComponentObject;
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.Grouping;
-import backtype.storm.generated.JavaObject;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.StreamInfo;
 import backtype.storm.topology.BasicBoltExecutor;

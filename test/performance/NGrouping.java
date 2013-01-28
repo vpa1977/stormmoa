@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import moa.storm.topology.MessageIdentifier;
-
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.task.WorkerTopologyContext;

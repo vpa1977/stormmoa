@@ -4,11 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javax.xml.bind.DatatypeConverter;
-
-import moa.core.MiscUtils;
 
 import storm.trident.operation.BaseFunction;
 import storm.trident.operation.Function;

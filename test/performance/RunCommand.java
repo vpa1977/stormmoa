@@ -1,7 +1,6 @@
 package performance;
 
 import moa.DoTask;
-import moa.tasks.RunTasks;
 
 /** 
  * Wrapper for the DoTask
