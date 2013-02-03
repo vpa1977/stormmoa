@@ -1,37 +1,37 @@
 package performance.cassandra;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.bind.DatatypeConverter;
 
-import moa.storm.cassandra.CassandraState;
+import moa.classifiers.Classifier;
+import moa.storm.persistence.CassandraState;
+import moa.storm.persistence.HDFSState;
+import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.AllGrouping;
-import moa.storm.topology.EvaluateClassifierBolt;
-import moa.storm.topology.EvaluateSpout;
 import moa.storm.topology.IdBasedGrouping;
-import moa.storm.topology.LearnSpout;
 import moa.storm.topology.MOAStreamSpout;
-import moa.storm.topology.TrainClassifierBolt;
 import moa.streams.generators.RandomTreeGenerator;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import performance.AllLocalGrouping;
 import performance.CombinerBolt;
 import performance.EchoBolt;
 import performance.LocalGrouping;
+import performance.cassandra.bolts.EvaluateSpout;
+import performance.cassandra.bolts.TopologyBroadcastBolt;
+import performance.cassandra.bolts.EvaluateClassifierBolt;
+import performance.cassandra.bolts.LearnSpout;
+import performance.cassandra.bolts.TrainClassifierBolt;
+import performance.cassandra.bolts.WorkerBroadcastBolt;
 import storm.trident.state.StateFactory;
-import weka.core.Instance;
 import backtype.storm.Config;
 import backtype.storm.ILocalCluster;
 import backtype.storm.StormSubmitter;
@@ -45,79 +45,11 @@ import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
 public class ClonedStorm implements Serializable {
 
 	public static final long GLOBAL_BATCH_SIZE = 100;
-	
-	class DeserializeBolt extends BaseRichBolt implements IRichBolt
-	{
-		private long m_instance_id;
-		private OutputCollector m_collector;
-		private int m_ensemble_size;
-		int m_task_id;
-		private String m_stream_id;
-		public DeserializeBolt(String streamId)
-		{
-			m_stream_id = streamId;
-		}
-		
-		@Override
-		public void prepare(Map stormConf, TopologyContext context,
-				OutputCollector collector) {
-			m_collector = collector;
-			m_instance_id = 0;
-			int task_id = context.getThisTaskId();
-			m_task_id = task_id;
-		}
-
-		@Override
-		public void execute(Tuple tuple) {
-			Object value = tuple.getValue(0);
-			List<Instance> inst = null;
-			if (value instanceof String){
-				byte[] b = DatatypeConverter.parseBase64Binary(String.valueOf(value));
-		        ObjectInputStream is;
-		        Object serializedObject = null;
-				try {
-					is = new ObjectInputStream( new ByteArrayInputStream(b));
-					serializedObject = is.readObject();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				inst = (List<Instance>)serializedObject;
-			}
-			else if (value instanceof List)	{
-				inst = (List<Instance>)value;
-			} else{
-				throw new RuntimeException("Cannot deserialize "+ value);
-			}
-			m_instance_id++;
-			ArrayList<Object> output = new ArrayList<Object>();
-			
-			output.add(new moa.storm.topology.MessageIdentifier(m_task_id, m_instance_id));
-			output.add(inst);
-			m_collector.emit(m_stream_id,tuple,output);
-			m_collector.ack(tuple);
-			if (m_instance_id % 10000 == 0)
-			{
-				System.out.println("Deserialized "+ m_instance_id+ " on "+ m_task_id);
-			}
-			
-		}
-
-		@Override
-		public void declareOutputFields(OutputFieldsDeclarer declarer) {
-			declarer.declareStream(m_stream_id,new Fields("instance_id", "instance"));
-		}
-		
-	}
 	
 	static int INSTANCE = 0;
 	public static Logger LOG = Logger.getLogger(ClonedStorm.class);
@@ -215,12 +147,13 @@ public class ClonedStorm implements Serializable {
 		
 	}
 	
-	public void buildLearnPart(StateFactory cassandra,IRichSpout source, TopologyBuilder builder,String clasisifer_cli, int num_workers, int ensemble_size, int num_classifier_executors)
+	public void buildLearnPart(IStateFactory cassandra,InstanceStreamSource source, TopologyBuilder builder,String clasisifer_cli, int num_workers, int ensemble_size, int num_classifier_executors)
 	{
 		LearnSpout learn_spout = new LearnSpout(source, cassandra, 100);
 		builder.setSpout("learner_stream",  learn_spout);
-		builder.setBolt("deserialize", new DeserializeBolt("learn"),num_workers).shuffleGrouping("learner_stream");
-		builder.setBolt("learn_local_grouping", new EchoBolt("learn"), num_workers)
+		builder.setBolt("deserialize", new TopologyBroadcastBolt("learn", LearnSpout.LEARN_STREAM_FIELDS),num_workers).shuffleGrouping("learner_stream",LearnSpout.EVENT_STREAM);
+		
+		builder.setBolt("learn_local_grouping", new WorkerBroadcastBolt("learn", LearnSpout.LEARN_STREAM_FIELDS), num_workers)
 			.customGrouping("deserialize", "learn", new AllGrouping());
 			
 		
@@ -230,18 +163,21 @@ public class ClonedStorm implements Serializable {
 			.customGrouping("learner_stream", LearnSpout.NOTIFICATION_STREAM, new AllGrouping());
 	}
 	
-	public void buildEvaluatePart(StateFactory cassandra,IRichSpout source, TopologyBuilder builder,int num_workers, int ensemble_size, 
+	public void buildEvaluatePart(IStateFactory cassandra,InstanceStreamSource source, TopologyBuilder builder,int num_workers, int ensemble_size, 
 			int num_classifier_executors, int num_combiners, int num_aggregators)
 	{
 		EvaluateSpout evaluate_spout = new EvaluateSpout(source, cassandra, 100);
 		builder.setSpout("prediction_stream", evaluate_spout);
-		builder.setBolt("p_deserialize", new DeserializeBolt("evaluate"),num_workers).shuffleGrouping("prediction_stream");
 		
-		builder.setBolt("evaluate_local_grouping", new EchoBolt("evaluate"), num_workers).customGrouping("p_deserialize", "evaluate", new AllGrouping());
+		
+		builder.setBolt("shared_storage", new SharedStorageBolt<Classifier>(cassandra, "evaluate_classifier"), num_workers).customGrouping("prediction_stream", EvaluateSpout.NOTIFICATION_STREAM,new AllGrouping());
+		
+		builder.setBolt("p_deserialize", new TopologyBroadcastBolt("evaluate", LearnSpout.LEARN_STREAM_FIELDS),num_workers).shuffleGrouping("prediction_stream");
+		
+		builder.setBolt("evaluate_local_grouping", new WorkerBroadcastBolt("evaluate", LearnSpout.LEARN_STREAM_FIELDS), num_workers).customGrouping("p_deserialize", "evaluate", new AllGrouping());
 
 		builder.setBolt("evaluate_classifier", new EvaluateClassifierBolt(cassandra),Math.max(num_classifier_executors,num_workers))
 			.customGrouping("evaluate_local_grouping", "evaluate", new AllLocalGrouping())
-			.customGrouping("prediction_stream", EvaluateSpout.NOTIFICATION_STREAM, new AllGrouping())
 			.setNumTasks(ensemble_size);
 		
 		builder.setBolt("combine_result", new CombinerBolt ("evaluate_classifier"), Math.max(num_workers, num_combiners))
@@ -272,8 +208,8 @@ public class ClonedStorm implements Serializable {
 		if ("true".equals(System.getProperty("localmode")))
 		{
 			MkClusterParam mkClusterParam = new MkClusterParam();
-			mkClusterParam.setSupervisors(2);
-			mkClusterParam.setPortsPerSupervisor(5);
+			mkClusterParam.setSupervisors(1);
+			mkClusterParam.setPortsPerSupervisor(1);
 
 			
 			Testing.withLocalCluster(mkClusterParam, new TestJob(){
@@ -281,19 +217,25 @@ public class ClonedStorm implements Serializable {
 				@Override
 				public void run(ILocalCluster cluster) throws Exception {
 
-					CassandraState.Options<String> options = new CassandraState.Options<String>();
-					StateFactory cassandra = new CassandraState.Factory("localhost:9160", options );
+				//	CassandraState.Options<String> options = new CassandraState.Options<String>();
+				//	IStateFactory cassandra = new CassandraState.Factory("localhost:9160", options );
+
+					HashMap<String,String> hdfs = new HashMap<String,String>();
+					hdfs.put("fs.default.name", "hdfs://localhost:9000");
+					hdfs.put("dfs.replication", "1");
+					IStateFactory cassandra = new HDFSState.Factory(hdfs);
+					
 					
 					TopologyBuilder builder = new TopologyBuilder();
 					RandomTreeGenerator stream = new RandomTreeGenerator();
 					stream.prepareForUse();
-					MOAStreamSpout moa_stream = new MOAStreamSpout(stream, 100);
+					MOAStreamSpout moa_stream = new MOAStreamSpout(stream, 0);
 
 					stream = new RandomTreeGenerator();
 					stream.prepareForUse();
 					MOAStreamSpout evaluate_stream = new MOAStreamSpout(stream, 0);
 					
-					buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree", num_workers, ensemble_size, num_classifiers);
+					buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree -m 1000000 -e 10000", num_workers, ensemble_size, num_classifiers);
 					buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
 					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
 					
@@ -310,8 +252,21 @@ public class ClonedStorm implements Serializable {
 		}
 		else 
 		{
-			CassandraState.Options<String> options = new CassandraState.Options<String>();
-			StateFactory cassandra = new CassandraState.Factory("ml64-1:9160", options );
+			
+			conf.setNumAckers(num_workers);
+			conf.setNumWorkers(num_workers);
+			conf.setMaxSpoutPending(num_pending);
+			conf.put("topology.worker.childopts", "-javaagent:/research/vp37/storm-0.8.2-wip8/lib/sizeofag-1.0.0.jar");
+			conf.put("topology.message.timeout.secs", 60);
+			
+//			CassandraState.Options<String> options = new CassandraState.Options<String>();
+//			IStateFactory cassandra = new CassandraState.Factory("ml64-1:9160", options );
+			
+			HashMap<String,String> hdfs = new HashMap<String,String>();
+			hdfs.put("fs.default.name", "hdfs://ml64-1:9000");
+			hdfs.put("dfs.replication", "1");
+			IStateFactory cassandra = new HDFSState.Factory(hdfs);
+
 
 			TopologyBuilder builder = new TopologyBuilder();
 			RandomTreeGenerator stream = new RandomTreeGenerator();
@@ -322,15 +277,20 @@ public class ClonedStorm implements Serializable {
 			stream.prepareForUse();
 			MOAStreamSpout evaluate_stream = new MOAStreamSpout(stream, 0);
 			
-			buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree", num_workers, ensemble_size, num_classifiers);
-			buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
-			builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+			buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree -m 10000000 -e 10000", num_workers, ensemble_size, num_classifiers);
 			
-			conf.setNumAckers(num_workers);
-			conf.setNumWorkers(num_workers);
-			conf.setMaxSpoutPending(num_pending);
+			StormSubmitter.submitTopology("learn"+ System.currentTimeMillis(), conf, builder.createTopology());
 			
-			StormSubmitter.submitTopology("noack"+ System.currentTimeMillis(), conf, builder.createTopology());
+			if ("lol".equals(args[6]))
+			{
+				builder = new TopologyBuilder();
+				buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
+				builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+				
+				StormSubmitter.submitTopology("evaluate"+ System.currentTimeMillis(), conf, builder.createTopology());
+			}
+			
+			
 		}
 	}
 	

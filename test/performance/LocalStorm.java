@@ -218,10 +218,10 @@ public class LocalStorm implements Serializable {
 
 		RandomTreeGenerator stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		builder.setSpout("learner_stream", new MOAStreamSpout(stream, 100));
+		builder.setSpout("learner_stream", new MOAStreamSpout(stream, 0));
 		stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		builder.setSpout("prediction_stream", new MOAStreamSpout(stream, 0));
+		builder.setSpout("prediction_stream", new MOAStreamSpout(stream, 1));
 		builder.setBolt("p_deserialize", new DeserializeBolt(ensemble_size,"evaluate"),num_workers).shuffleGrouping("prediction_stream");
 		
 		builder.setBolt("deserialize", new DeserializeBolt(ensemble_size,"learn"),num_workers).shuffleGrouping("learner_stream");

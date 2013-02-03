@@ -1,8 +1,12 @@
-package moa.storm.cassandra;
+package moa.storm.persistence;
 
 
 import backtype.storm.task.IMetricsContext;
 import backtype.storm.tuple.Values;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
@@ -41,25 +45,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.DeflaterInputStream;
+import java.util.zip.DeflaterOutputStream;
 /** 
  * Interface to the cassandra backend
  * @author bsp
  *
  */
-public class CassandraState<T>  {
+public class CassandraState<T> implements IPersistentState<T>  {
 
+
+	
     public static class Options<T> implements Serializable {
-        public int localCacheSize = 5000;
-        public String globalKey = "$__GLOBAL_KEY__$";
-        public Serializer<T> serializer = null;
-        public String clusterName = "trident-state";
+        public String clusterName = "Test Cluster";
         public int replicationFactor = 1;
         public String keyspace = "test";
-        public String columnFamily = "column_family";
+        public String columnFamily = "c";
         public String rowKey = "row_key";
     }
 
-    public static class Factory implements StateFactory {
+    public static class Factory implements IStateFactory  {
         private String hosts;
         private Options options;
 
@@ -68,16 +73,15 @@ public class CassandraState<T>  {
             this.options = options;
         }
         
-        public CassandraState create()
+        /* (non-Javadoc)
+		 * @see moa.storm.persistence.IPenguin#create()
+		 */
+        @Override
+		public IPersistentState create()
         {
         	return new CassandraState(hosts, options);
         }
 
-		public State makeState(Map conf, IMetricsContext metrics,
-				int partitionIndex, int numPartitions) {
-			// TODO Auto-generated method stub
-			return null;
-		}
     }
 
     private ColumnFamilyTemplate<String,String> m_template;
@@ -86,6 +90,7 @@ public class CassandraState<T>  {
     public CassandraState(String hosts, Options<T> options) {
     	Cluster cassandra =HFactory.getOrCreateCluster(options.clusterName, new CassandraHostConfigurator(hosts));
     	Keyspace k_space = HFactory.createKeyspace(options.keyspace, cassandra);
+    	
     	m_template = 
     			new ThriftColumnFamilyTemplate<String, String>(k_space,
                         options.columnFamily,
@@ -94,20 +99,32 @@ public class CassandraState<T>  {
     	
     	}
     
-    public long getLong(String row, String column) {
+    /* (non-Javadoc)
+	 * @see moa.storm.persistence.IPersistentState#getLong(java.lang.String, java.lang.String)
+	 */
+    @Override
+	public long getLong(String row, String column) {
 		ColumnFamilyResult<String,  String> res = m_template.queryColumns(row);
 		Long result = res.getLong(column);
 		if (result == null)
-			return 0;
+			return Long.MIN_VALUE;
 		return result.longValue();
     }
     
-    public void setLong(String row, String column, long value) {
+    /* (non-Javadoc)
+	 * @see moa.storm.persistence.IPersistentState#setLong(java.lang.String, java.lang.String, long)
+	 */
+    @Override
+	public void setLong(String row, String column, long value) {
 		ColumnFamilyUpdater<String, String> updater = m_template.createUpdater(row);
 		updater.setLong(column,value); 
 		m_template.update(updater);
     }
 
+	/* (non-Javadoc)
+	 * @see moa.storm.persistence.IPersistentState#get(java.lang.String, java.lang.String)
+	 */
+	@Override
 	public T get(String row, String column) {
 		ColumnFamilyResult<String,  String> res = m_template.queryColumns(row);
 		byte[] data = res.getByteArray(column);
@@ -116,33 +133,52 @@ public class CassandraState<T>  {
 		ObjectInputStream is;
 		try {
 			is = new ObjectInputStream(new ByteArrayInputStream(data));
-			return (T)is.readObject();
+			return (T) is.readObject();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-			
 		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException(e);	
 		}
+		
 	}
 
+	/* (non-Javadoc)
+	 * @see moa.storm.persistence.IPersistentState#put(java.lang.String, java.lang.String, java.lang.Object)
+	 */
+	@Override
 	public void put(String rowKey, String key, Object value) {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream os;
-		try {
-			os = new ObjectOutputStream(bos);
-			os.writeObject(value);
-			os.flush();
-			os.close();
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream os;
+			try {
+				os = new ObjectOutputStream (bos);
+				os.writeObject(value);
+				os.flush();
+				os.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 			ColumnFamilyUpdater<String, String> updater = m_template.createUpdater(rowKey);
 			updater.setByteArray(key, bos.toByteArray());
 			m_template.update(updater);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 	}
 	
-	public void cleanup(String rowKey)
+
+	
+	/* (non-Javadoc)
+	 * @see moa.storm.persistence.IPersistentState#deleteRow(java.lang.String)
+	 */
+	@Override
+	public void deleteRow(String rowKey)
 	{
 		m_template.deleteRow(rowKey);
+	}
+	
+	/* (non-Javadoc)
+	 * @see moa.storm.persistence.IPersistentState#deleteColumn(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void deleteColumn(String rowKey, String columnKey)
+	{
+		m_template.deleteColumn(rowKey, columnKey);
 	}
 }

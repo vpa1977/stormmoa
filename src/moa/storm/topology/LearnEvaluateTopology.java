@@ -69,8 +69,8 @@ public abstract class LearnEvaluateTopology {
 			toMerge.add( learningStream.each(new Fields(FIELD_INSTANCE), new EchoFunction(i), new Fields(FIELD_ID)));
 		}
 		learningStream =topology.merge(toMerge);
-		
-		TridentState ensemble = learningStream.groupBy(new Fields(FIELD_ID)).persistentAggregate(createFactory("key_classifier"), new Fields(FIELD_ID,FIELD_INSTANCE),
+		TridentState ensemble = learningStream.groupBy(new Fields(FIELD_ID)).
+				persistentAggregate(createFactory("key_classifier"), new Fields(FIELD_ID,FIELD_INSTANCE),
 				new BaggingLearnerAggregator(new LearnerWrapper( getClassifier(options) )), new Fields()).parallelismHint(ensemble_size);
 		
 		

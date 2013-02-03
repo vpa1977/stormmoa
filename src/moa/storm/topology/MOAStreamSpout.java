@@ -1,8 +1,14 @@
 package moa.storm.topology;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.Serializable;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import performance.cassandra.InstanceStreamSource;
 
 import moa.streams.InstanceStream;
 import weka.core.Instance;
@@ -13,7 +19,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 
-public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
+public class MOAStreamSpout extends BaseRichSpout implements IRichSpout, InstanceStreamSource {
 	
 
 	@Override
@@ -29,6 +35,7 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 	private long m_delay;
 	private long m_sent;
 	private long m_acked;
+	private Measurement m_measurement;
 	
 	public MOAStreamSpout(InstanceStream stream, int delay)
 	{
@@ -50,13 +57,13 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 
 	@Override
 	public void nextTuple() {
+			if (m_measurement == null)
+				m_measurement = new Measurement();
+			m_measurement.check();
 			if (m_delay == 0 || m_id < m_delay ) 
 			{
 				List<Object> message = new ArrayList<Object>();
-				ArrayList<Instance> instances = new ArrayList<Instance>();
-				for (int i = 0 ; i < 100 ; i++)
-					instances.add(m_stream.nextInstance());
-				message.add(instances);
+				message.add(read());
 				m_collector.emit(message, new MessageIdentifier(m_key,m_id++));
 				if (m_id % 10000 == 0 && m_delay == 0)
 				{
@@ -66,10 +73,77 @@ public class MOAStreamSpout extends BaseRichSpout implements IRichSpout{
 			}
 		
 	}
+	
+	@Override
+	public ArrayList<Instance> read() {
+		ArrayList<Instance> instances = new ArrayList<Instance>();
+		for (int i = 0 ; i < 100 ; i++)
+			instances.add(m_stream.nextInstance());
+		return instances;
+	}
+
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("instance"));
 	}
+	
+	class Measurement implements Serializable {
+		public Measurement()
+		{
+			m_start = System.currentTimeMillis();
+			count = 0;
+			
+		}
+		
+		private int getPid() throws Throwable
+		{
+			java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
+			java.lang.reflect.Field jvm = runtime.getClass().getDeclaredField("jvm");
+			jvm.setAccessible(true);
+			sun.management.VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
+			java.lang.reflect.Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
+			pid_method.setAccessible(true);
+			int pid = (Integer) pid_method.invoke(mgmt);
+			return pid;
+		}			
+
+		private void writeResult(long period)
+		{
+			try {
+				
+				long tup_sec = count * 100 * 1000 /period;
+				
+				File f = new File("/home/vp37/moa_spout_learn"+ InetAddress.getLocalHost().getHostName() + "-" + getPid());
+				FileOutputStream fos = new FileOutputStream(f);
+				String result = "" +tup_sec;
+				fos.write(result.getBytes());
+				fos.write(" \r\n".getBytes());
+				fos.flush(); 
+				fos.close();
+			}
+			catch (Throwable t)
+			{
+				t.printStackTrace();
+			}
+		}
+		
+		public void check()
+		{
+			if (m_start == 0 ) 
+				m_start = System.currentTimeMillis();
+			long current =System.currentTimeMillis();
+			count ++;
+			if (current - m_start > 1000 * 60)
+			{
+				writeResult(current - m_start);
+				m_start = System.currentTimeMillis();
+				count = 0;
+			}  
+		}
+		long m_start;
+		long count;
+	}
+
 
 }

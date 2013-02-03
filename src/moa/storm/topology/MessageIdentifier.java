@@ -35,4 +35,7 @@ public class MessageIdentifier implements Serializable
 	public long getId() {
 		return m_id;
 	}
+	public int getTask() {
+		return m_task_id;
+	}
 }
