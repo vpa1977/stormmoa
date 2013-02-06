@@ -173,7 +173,7 @@ public class BoostTrainBolt extends BasePartition implements IRichBolt {
 	}
 
 	private boolean CanPersist(long version) {
-		if (m_version < version) 
+		if (m_version < version || m_b_first_save) 
 		{
 			long saved_version = m_classifier_state.getLong("version", "version");
 			if (saved_version >= m_version ||m_b_first_save)
