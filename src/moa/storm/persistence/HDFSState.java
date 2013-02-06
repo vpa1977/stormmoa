@@ -62,7 +62,8 @@ public class HDFSState<T> implements IPersistentState<T>{
 		try{
 			fis = m_fs.open(p);
 			is = new BufferedReader(new InputStreamReader(fis));
-			return Long.parseLong(is.readLine());
+			String line = is.readLine();
+			return Long.parseLong(line);
 		} catch (IOException e) {
 			return -1;
 		} 

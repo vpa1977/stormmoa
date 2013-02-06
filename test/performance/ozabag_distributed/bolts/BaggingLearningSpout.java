@@ -96,6 +96,7 @@ public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 		message.add(m_version);
 		if (m_version % m_pending == 0 && readVersion(m_state) >= m_sent_to_save) 
 		{
+			System.out.println("Sening to save "+m_version);
 			message.add(true);
 			m_sent_to_save  = m_version;
 		}
@@ -111,6 +112,7 @@ public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 	public void fail(Object msgId) {
 		super.fail(msgId);
 		m_reset = true;
+		m_sent_to_save = -1;
 	}
 
 	@Override

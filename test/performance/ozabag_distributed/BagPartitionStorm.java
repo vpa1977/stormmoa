@@ -166,7 +166,7 @@ public class BagPartitionStorm implements Serializable {
 		
 		builder.setBolt("persist", new SaveBolt(cassandra), Math.max(num_classifier_executors,num_workers)).setNumTasks(Math.max(num_classifier_executors,num_workers))
 			.customGrouping("train_classifier","persist", new ShuffleLocalGrouping());
-		builder.setBolt("version_update", new VersionUpdateBolt(cassandra, Math.max(num_classifier_executors,num_workers))).setNumTasks(1)
+		builder.setBolt("version_update", new VersionUpdateBolt(cassandra,"persist")).setNumTasks(1)
 			.shuffleGrouping("persist", "persist_notify");
 			
 	}

@@ -47,6 +47,7 @@ public class SaveBolt extends BaseRichBolt implements IRichBolt
 	public void execute(Tuple input) {
 		long version = input.getLongByField("version");
 		List<BaggingMember> ensemble_partition = (List<BaggingMember>)input.getValueByField("ensemble_partition");
+		System.out.println("Saving version "+ version + " with "+ ensemble_partition.size() + " elements ");
 		for (BaggingMember m : ensemble_partition)
 		{
 			m_classifier_state.put(m.m_key,String.valueOf(version), m);

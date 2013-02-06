@@ -110,7 +110,7 @@ public class BoostTrainBolt extends BasePartition implements IRichBolt {
 				if (m_wrapper == null) {
 					m_b_first_save =true;
 					m_wrapper = new ArrayList<BoostingMember>();
-					for (int i = m_start_key ; i < m_partition_size+m_partition_size; i ++ )
+					for (int i = m_start_key ; i < m_start_key+m_partition_size; i ++ )
 					{
 						BoostingMember member  = new BoostingMember();
 						member.m_classifier = createClassifier(m_cli_string);

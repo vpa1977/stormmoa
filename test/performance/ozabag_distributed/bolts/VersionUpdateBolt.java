@@ -22,10 +22,11 @@ public class VersionUpdateBolt extends BaseRichBolt implements IRichBolt {
 	private int m_num_tasks;
 	private int m_cur_count;
 	private long m_version;
+	private String m_component_id;
 	
-	public VersionUpdateBolt(IStateFactory fact, int num_tasks)
+	public VersionUpdateBolt(IStateFactory fact, String comp_id)
 	{
-		m_num_tasks= num_tasks;
+		m_component_id = comp_id;
 		m_state_factory = fact;
 	}
 	
@@ -33,7 +34,7 @@ public class VersionUpdateBolt extends BaseRichBolt implements IRichBolt {
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {
 		m_state = m_state_factory.create();
-		
+		m_num_tasks  = context.getComponentTasks(m_component_id).size();
 	}
 
 	@Override
@@ -50,6 +51,7 @@ public class VersionUpdateBolt extends BaseRichBolt implements IRichBolt {
 			if (m_cur_count == m_num_tasks) 
 			{
 				updateVersion(m_state,m_version);
+				System.out.println("Version updated");
 				m_cur_count = 0;
 			}
 		}

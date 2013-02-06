@@ -48,7 +48,7 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 	private List<String> m_fields;
 	private int m_save_task;
 	private long m_last_sent_version;
-	private boolean m_b_first_save = false;
+	private boolean m_b_first_save;
 	private boolean pureBoostOption;
 
 	private Classifier createClassifier(String cliString) throws RuntimeException {
@@ -80,7 +80,6 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 		m_wrapper = null;
 		m_key = "classifier" + context.getThisTaskIndex();
 		m_version = -1;
-		
 		m_b_first_save =false;
 		
 	}
@@ -111,7 +110,7 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 				if (m_wrapper == null) {
 					m_b_first_save =true;
 					m_wrapper = new ArrayList<BaggingMember>();
-					for (int i = m_start_key ; i < m_partition_size+m_partition_size; i ++ )
+					for (int i = m_start_key ; i < m_start_key+m_partition_size; i ++ )
 					{
 						BaggingMember member  = new BaggingMember();
 						member.m_classifier = createClassifier(m_cli_string);
@@ -125,6 +124,8 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 			long version = tuple.getLongByField("version").longValue();
 			Instance inst = (Instance)tuple.getValueByField("instance");
 			Boolean persist = tuple.getBooleanByField("persist");
+			if (persist.booleanValue())
+				System.out.println("Should save "+version);
 			for (BaggingMember wrapper : m_wrapper)
 			{
 
@@ -156,7 +157,7 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 	}
 
 	private boolean CanPersist(long version) {
-		if (m_version < version) 
+		if (m_version < version || m_b_first_save) 
 		{
 			long saved_version = m_classifier_state.getLong("version", "version");
 			if (saved_version >= m_version ||m_b_first_save)
