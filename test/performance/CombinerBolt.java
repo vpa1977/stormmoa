@@ -68,7 +68,7 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 
 	@Override
 	public void execute(Tuple input) {
-		int numVotes = input.getInteger(3).intValue();
+		int numVotes = input.getIntegerByField("votes").intValue();
 		m_emit_time += System.currentTimeMillis()  - input.getLong(4).longValue();
 		
 		Object instance_id = input.getValue(0);

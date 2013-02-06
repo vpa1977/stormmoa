@@ -77,7 +77,6 @@ public class ClassifierBolt extends BaseRichBolt implements IRichBolt
 				//	m_state.set("classifier"+id,m_wrapper);
 				}
 			}
-			m_collector.ack(tuple);
 		} 
 		else
 		if ("evaluate".equals(tuple.getSourceStreamId()))
@@ -100,10 +99,11 @@ public class ClassifierBolt extends BaseRichBolt implements IRichBolt
 				objs.add( 1 );
 				objs.add(System.currentTimeMillis());
 				m_collector.emit(tuple,objs);
-				m_collector.ack(tuple);
+
 				
 			}
 		}
+		m_collector.ack(tuple);		
 	}
 
 	@Override
