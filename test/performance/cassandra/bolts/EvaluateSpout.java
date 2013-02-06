@@ -22,7 +22,7 @@ import backtype.storm.tuple.Fields;
 
 public class EvaluateSpout extends BaseRichSpout implements IRichSpout {
 	
-	public static final List<String> LEARN_STREAM_FIELDS = Arrays.asList( new String[]{"instance", "version"});
+	public static final List<String> EVALUATE_STREAM_FIELDS = Arrays.asList( new String[]{"instance", "version"});
 	public static final String NOTIFICATION_STREAM = "notification";
 	public static final String COMMAND_FIELD = "command";
 	private static final int NOTIFICATION_ID = -1;
@@ -144,6 +144,7 @@ public class EvaluateSpout extends BaseRichSpout implements IRichSpout {
 		if (id.getTask()  == NOTIFICATION_ID) 
 		{
 			m_current_version = id.getId();
+			m_state.setLong("version", "evaluate_version", m_current_version);
 			m_update_pending = false;
 		}
 	}
@@ -155,7 +156,7 @@ public class EvaluateSpout extends BaseRichSpout implements IRichSpout {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields(LEARN_STREAM_FIELDS));
+		declarer.declare(new Fields(EVALUATE_STREAM_FIELDS));
 		declarer.declareStream(NOTIFICATION_STREAM, new Fields(COMMAND_FIELD));
 	}
 

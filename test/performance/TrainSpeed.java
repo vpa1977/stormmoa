@@ -37,7 +37,7 @@ public class TrainSpeed {
 
 	public static Classifier train(int size, RandomTreeGenerator stream,long instances) {
 		Classifier cls= null;
-		String cliString = "moa.classifiers.meta.OzaBag -s "+size+" -l \"trees.HoeffdingTree -m 10000000 -e 10000\"";
+		String cliString = "moa.classifiers.meta.OzaBoost -s "+size+" -l \"trees.HoeffdingTree -m 10000000 -e 10000\"";
 		try {
 			cls = (Classifier)ClassOption.cliStringToObject(cliString, Classifier.class, new Option[]{});
 			cls.prepareForUse();

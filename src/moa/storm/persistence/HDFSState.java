@@ -1,7 +1,9 @@
 package moa.storm.persistence;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
@@ -50,10 +52,32 @@ public class HDFSState<T> implements IPersistentState<T>{
 
 	@Override
 	public long getLong(String row, String column) {
-		Object val = get(row,column);
-		if (val == null)
-			return Long.MIN_VALUE;
-		return  ((Long)val).longValue();
+	//	Object val = get(row,column);
+	//	if (val == null)
+	//		return Long.MIN_VALUE;
+	//	return  ((Long)val).longValue();
+		Path p = createPath(row,column);
+		FSDataInputStream fis = null;
+		BufferedReader is = null;
+		try{
+			fis = m_fs.open(p);
+			is = new BufferedReader(new InputStreamReader(fis));
+			return Long.parseLong(is.readLine());
+		} catch (IOException e) {
+			return -1;
+		} 
+		catch (NumberFormatException e)
+		{
+			return -1;
+		}
+		finally {
+			try {
+				if (is != null ) is.close();
+				if (fis != null ) fis.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	private Path createPath(String row, String column) {
@@ -62,7 +86,26 @@ public class HDFSState<T> implements IPersistentState<T>{
 
 	@Override
 	public void setLong(String row, String column, long value) {
-		put(row,column,value);
+		//put(row,column,value);
+		Path p = createPath(row,column);
+		FSDataOutputStream fis = null;
+		BufferedReader r= null;
+		try{
+			fis = m_fs.create(p);
+			fis.write(String.valueOf(value).getBytes());
+			fis.write("\n".getBytes());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			try {
+				if (fis != null ) fis.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		
 	}
 
 	@Override

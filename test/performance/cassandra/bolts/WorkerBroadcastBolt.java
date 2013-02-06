@@ -27,6 +27,9 @@ public class WorkerBroadcastBolt extends BaseRichBolt implements IRichBolt {
 
 		m_stream_id = streamId;
 	}
+	
+	
+	
 	@Override
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {

@@ -34,6 +34,7 @@ public class SharedStorageBolt<T>  implements IRichBolt {
 	private static ConcurrentHashMap<String,Object> m_data = new ConcurrentHashMap<String, Object>();
 	private static SharedStorageBolt m_instance;
 	protected ArrayList<Long> m_versions;
+
 	
 	public SharedStorageBolt(IStateFactory factory, String user_component){
 		m_factory = factory;

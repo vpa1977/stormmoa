@@ -3,7 +3,6 @@ package performance.cassandra.bolts;
 import static org.junit.Assert.*;
 
 
-import moa.storm.persistence.IPersistentState;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.MOAStreamSpout;
 import moa.storm.topology.MessageIdentifier;
@@ -14,66 +13,14 @@ import org.junit.Test;
 import backtype.storm.task.TopologyContext;
 
 import performance.cassandra.InstanceStreamSource;
+import performance.state.DummyPersistentState;
+import performance.state.DummyStateFactory;
+
+
 import weka.classifiers.trees.RandomTree;
 
 public class EvaluateSpoutTest {
 	
-	private class DummyPersistentState implements IPersistentState
-	{
-		public long the_long;
-		public Object the_object;
-
-		@Override
-		public long getLong(String row, String column) {
-			// TODO Auto-generated method stub
-			return the_long;
-		}
-
-		@Override
-		public void setLong(String row, String column, long value) {
-			the_long = value;
-			
-		}
-
-		@Override
-		public Object get(String row, String column) {
-			// TODO Auto-generated method stub
-			return the_object;
-		}
-
-		@Override
-		public void put(String rowKey, String key, Object value) {
-			the_object = value;
-			
-		}
-
-		@Override
-		public void deleteRow(String rowKey) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void deleteColumn(String rowKey, String columnKey) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-	}
-
-	private class DummyStateFactory implements IStateFactory 
-	{
-		public IPersistentState the_state;
-
-		@Override
-		public IPersistentState create() {
-			// TODO Auto-generated method stub
-			return the_state;
-		}
-		
-	}
-
-
 	private class EvaluateSpoutProxy extends EvaluateSpout
 	{
 

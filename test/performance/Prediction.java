@@ -8,7 +8,7 @@ import moa.core.DoubleVector;
 import weka.core.Instance;
 import backtype.storm.tuple.Tuple;
 
-class Prediction implements Serializable
+public class Prediction implements Serializable
 {
 	public Prediction(ArrayList<Instance> instance, ArrayList<DoubleVector> vect, Tuple input, int numVotes) {
 		m_instance = instance;
@@ -22,11 +22,11 @@ class Prediction implements Serializable
 
 		}
 	}
-	ArrayList<Instance> m_instance;
-	ArrayList<DoubleVector> m_votes;
-	int m_num_votes;
-	long m_timestamp;
-	Tuple m_input;
+	public ArrayList<Instance> m_instance;
+	public ArrayList<DoubleVector> m_votes;
+	public int m_num_votes;
+	public long m_timestamp;
+	public Tuple m_input;
 	
 	public void addVotes(ArrayList<DoubleVector> vect, int numVotes) {
 		Iterator<DoubleVector> my_votes = m_votes.iterator();

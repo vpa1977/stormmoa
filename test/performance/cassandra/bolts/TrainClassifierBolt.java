@@ -108,20 +108,8 @@ public class TrainClassifierBolt extends BaseRichBolt implements IRichBolt {
 			{
 				m_version = version;
 				m_classifier_state.put(m_key,String.valueOf(m_version),m_wrapper);
-				
-		/*		ArrayList<Long> new_version_list = new ArrayList<Long>();
-				for (int i = 0 ; i < m_known_versions.size(); i ++ ) 
-				{
-					if (i < m_known_versions.size() - 10 )
-						m_classifier_state.deleteColumn(m_key, String.valueOf(m_known_versions.get(i)));
-					else
-						new_version_list.add(m_known_versions.get(i));
-				
-				}
-				m_known_versions = new_version_list;
-				m_known_versions.add(m_version);*/
-				//System.out.println("Commit " + m_key + " version "+ m_version);
 			}
+			m_collector.emit(tuple.getSourceStreamId(), tuple, tuple.getValues());
 		} else
 			throw new RuntimeException("Learning bolt is not initialized");
 		m_collector.ack(tuple);

@@ -1,4 +1,4 @@
-package performance.cassandra.bolts;
+package performance.ozaboost_distributed.bolts;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-public class TopologyBroadcastBolt extends BaseRichBolt implements IRichBolt
+public class BoostTopologyBroadcastBolt extends BaseRichBolt implements IRichBolt
 {
 	
 	private long m_instance_id;
@@ -27,11 +27,12 @@ public class TopologyBroadcastBolt extends BaseRichBolt implements IRichBolt
 	int m_task_id;
 	private String m_stream_id;
 	private List<String> m_fields;
-	public TopologyBroadcastBolt(String streamId, List<String> f)
+	public BoostTopologyBroadcastBolt(String streamId, List<String> f)
 	{
 		m_stream_id = streamId;
 		ArrayList<String> fields = new ArrayList<String>();
 		fields.add("id");
+		fields.add("index");
 		fields.addAll(f);
 		m_fields = fields;
 	}
@@ -103,9 +104,10 @@ public class TopologyBroadcastBolt extends BaseRichBolt implements IRichBolt
 		
 		
 		output.add(new moa.storm.topology.MessageIdentifier(m_task_id, m_instance_id));
+		output.add(0);
 		output.addAll(tuple.getValues());
 		int index = tuple.getFields().fieldIndex("instance");
-		output.set(index+1, inst);
+		output.set(index+2, inst);
 		
 		m_collector.emit(m_stream_id,tuple,output);
 		m_collector.ack(tuple);

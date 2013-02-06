@@ -1,4 +1,4 @@
-package performance.cassandra.bolts;
+package performance.ozabag_distributed.bolts;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,9 +27,9 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 
-public class LearnSpout extends BaseRichSpout implements IRichSpout {
+public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 
-	public static final List<String> LEARN_STREAM_FIELDS = Arrays.asList( new String[]{"instance", "version"});
+	public static final List<String> LEARN_STREAM_FIELDS = Arrays.asList( new String[]{"instance", "lambda_d","version","persist"});
 	public static final String NOTIFICATION_STREAM = "notification";
 	public static final String COMMAND_FIELD = "command";
 	private static final int NOTIFICATION_ID = -1;
@@ -40,6 +40,7 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 	private SpoutOutputCollector m_collector;
 	private IPersistentState<String> m_state;
 	private long m_version;
+	private long m_sent_to_save;
 	private boolean m_reset;
 	private int m_task_id;
 	private long m_id;
@@ -47,8 +48,10 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 	private int m_key;
 
 	private Measurement m_measurement;
+	private ArrayList<Instance> m_instance_cache;
+	
 
-	public LearnSpout(InstanceStreamSource stream_src, IStateFactory classifierState,
+	public BaggingLearningSpout(InstanceStreamSource stream_src, IStateFactory classifierState,
 			long pending) {
 		m_stream_src = stream_src;
 		m_classifier_state = classifierState;
@@ -68,6 +71,7 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 		m_task_id = context.getThisTaskId();
 		m_id = 0;
 		m_key = context.getThisTaskId();
+		m_sent_to_save = -1;
 		
 	}
 
@@ -83,10 +87,22 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 					new MessageIdentifier(NOTIFICATION_ID, m_id++));
 			m_reset = false;
 		}
+		if (m_instance_cache == null || m_instance_cache.size() == 0)
+			m_instance_cache = m_stream_src.read();
 		
 		List<Object> message = new ArrayList<Object>();
-		message.add(m_stream_src.read());
+		message.add(m_instance_cache.remove(0));
+		message.add(1.0);
 		message.add(m_version);
+		if (m_version % m_pending == 0 && readVersion(m_state) >= m_sent_to_save) 
+		{
+			message.add(true);
+			m_sent_to_save  = m_version;
+		}
+		else
+			message.add(false);
+		
+			
 		m_collector.emit(EVENT_STREAM, message, new MessageIdentifier(m_key,m_version));
 
 	}
@@ -99,26 +115,13 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 
 	@Override
 	public void ack(Object msgId) {
+		super.ack(msgId);
 		if (m_measurement == null)
 			m_measurement = new Measurement();
 		m_measurement.check();
+		m_measurement.write();
+		m_version++;
 
-		super.ack(msgId);
-		MessageIdentifier msg = (MessageIdentifier) msgId;
-		if (msg.getTask() != NOTIFICATION_ID)
-		{
-			long confirmedVersion = msg.getId();
-			if (confirmedVersion % m_pending == 0) 
-			{
-				updateVersion(m_state, confirmedVersion);
-				m_measurement.write();
-			}
-			m_version++;
-		}
-	}
-
-	private void updateVersion(IPersistentState state, long l) {
-		state.setLong("version", "version", l);
 	}
 
 	private long readVersion(IPersistentState state) {
@@ -159,7 +162,7 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 		{
 			try {
 				
-				long tup_sec = count * 100 * 1000 /period;
+				long tup_sec = count * 1000 /period;
 				
 				File f = new File("/home/vp37/learn"+ InetAddress.getLocalHost().getHostName() + "-" + getPid());
 				FileOutputStream fos = new FileOutputStream(f);
