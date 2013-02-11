@@ -10,13 +10,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import performance.cassandra.InstanceStreamSource;
 
 import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.IPersistentState;
-import moa.storm.topology.EnsembleCommand;
-import moa.storm.topology.MessageIdentifier;
-import moa.storm.topology.Reset;
+import moa.storm.topology.message.EnsembleCommand;
+import moa.storm.topology.message.MessageIdentifier;
+import moa.storm.topology.message.Reset;
+import moa.storm.topology.spout.InstanceStreamSource;
 
 import storm.trident.state.StateFactory;
 import weka.core.Instance;

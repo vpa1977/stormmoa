@@ -12,8 +12,8 @@ import java.util.Random;
 
 import javax.xml.bind.DatatypeConverter;
 
-import moa.storm.topology.BenchmarkingTopology;
-import moa.storm.topology.EchoFunction;
+import moa.trident.topology.BenchmarkingTopology;
+import moa.trident.topology.EchoFunction;
 import storm.trident.Stream;
 import storm.trident.TridentState;
 import storm.trident.TridentTopology;

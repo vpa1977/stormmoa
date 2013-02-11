@@ -6,7 +6,7 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import moa.storm.topology.StormClusterTopology;
+import moa.trident.topology.StormClusterTopology;
 import storm.trident.TridentTopology;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;

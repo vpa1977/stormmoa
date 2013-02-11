@@ -3,7 +3,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import moa.storm.topology.BenchmarkingTopology;
+import moa.trident.topology.BenchmarkingTopology;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;

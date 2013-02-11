@@ -14,13 +14,12 @@ import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
-import moa.storm.topology.AllGrouping;
-import moa.storm.topology.ClassifierBolt;
-import moa.storm.topology.IdBasedGrouping;
-import moa.storm.topology.MOAStreamSpout;
+import moa.storm.topology.grouping.IdBasedGrouping;
+import moa.storm.topology.meta.MemoryOnlyOzaBag;
 import moa.streams.generators.RandomTreeGenerator;
 
 import org.apache.log4j.Logger;
+
 
 import weka.core.Instance;
 import backtype.storm.Config;
@@ -35,79 +34,11 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-public class LocalStorm implements Serializable {
+public class LocalStorm extends MemoryOnlyOzaBag implements Serializable {
 
 	public static final long GLOBAL_BATCH_SIZE = 100;
 	
-	class DeserializeBolt extends BaseRichBolt implements IRichBolt
-	{
-		private long m_instance_id;
-		private OutputCollector m_collector;
-		private int m_ensemble_size;
-		int m_task_id;
-		private String m_stream_id;
-		public DeserializeBolt(int ensemble_size, String streamId)
-		{
-			m_ensemble_size = ensemble_size;
-			m_stream_id = streamId;
-		}
-		
-		@Override
-		public void prepare(Map stormConf, TopologyContext context,
-				OutputCollector collector) {
-			m_collector = collector;
-			m_instance_id = 0;
-			int task_id = context.getThisTaskId();
-			m_task_id = task_id;
-		}
-
-		@Override
-		public void execute(Tuple tuple) {
-			Object value = tuple.getValue(0);
-			List<Instance> inst = null;
-			if (value instanceof String){
-				byte[] b = DatatypeConverter.parseBase64Binary(String.valueOf(value));
-		        ObjectInputStream is;
-		        Object serializedObject = null;
-				try {
-					is = new ObjectInputStream( new ByteArrayInputStream(b));
-					serializedObject = is.readObject();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				inst = (List<Instance>)serializedObject;
-			}
-			else if (value instanceof List)	{
-				inst = (List<Instance>)value;
-			} else{
-				throw new RuntimeException("Cannot deserialize "+ value);
-			}
-			m_instance_id++;
-			ArrayList<Object> output = new ArrayList<Object>();
-			
-			output.add(new moa.storm.topology.MessageIdentifier(m_task_id, m_instance_id));
-			output.add(inst);
-			m_collector.emit(m_stream_id,tuple,output);
-			m_collector.ack(tuple);
-			if (m_instance_id % 10000 == 0)
-			{
-				System.out.println("Deserialized "+ m_instance_id+ " on "+ m_task_id);
-			}
-			
-		}
-
-		@Override
-		public void declareOutputFields(OutputFieldsDeclarer declarer) {
-			declarer.declareStream(m_stream_id,new Fields("instance_id", "instance"));
-		}
-		
-	}
-	
-	static int INSTANCE = 0;
+		static int INSTANCE = 0;
 	public static Logger LOG = Logger.getLogger(LocalStorm.class);
 
 	
@@ -206,7 +137,7 @@ public class LocalStorm implements Serializable {
 	
 	public LocalStorm(Config conf,String[] args) throws Throwable
 	{
-		
+		super();
 		
 		TopologyBuilder builder = new TopologyBuilder();
 		int ensemble_size = Integer.parseInt(args[0]);
@@ -219,30 +150,17 @@ public class LocalStorm implements Serializable {
 		RandomTreeGenerator stream = new RandomTreeGenerator();
 		stream.prepareForUse();
 		builder.setSpout("learner_stream", new MOAStreamSpout(stream, 10000));
+		
 		stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		builder.setSpout("prediction_stream", new MOAStreamSpout(stream, 0));
-		builder.setBolt("p_deserialize", new DeserializeBolt(ensemble_size,"evaluate"),num_workers).shuffleGrouping("prediction_stream");
+		MOAStreamSpout predict = new MOAStreamSpout(stream, 0);
+		MOAStreamSpout learn = new MOAStreamSpout(stream, 10000);
 		
-		builder.setBolt("deserialize", new DeserializeBolt(ensemble_size,"learn"),num_workers).shuffleGrouping("learner_stream");
+		build("trees.HoeffdingTree -m 10000000 -e 10000",
+				builder, ensemble_size, num_workers, num_classifiers,
+				num_combiners, num_aggregators, learn,predict);
 		
-		builder.setBolt("evaluate_local_grouping", new EchoBolt("evaluate"), num_workers).customGrouping("p_deserialize", "evaluate", new AllGrouping());
-		
-		builder.setBolt("learn_local_grouping", new EchoBolt("learn"), num_workers).customGrouping("deserialize", "learn", new AllGrouping());
-		
-		builder.setBolt("classifier_instance", new ClassifierBolt("trees.HoeffdingTree -m 10000000 -e 10000"),Math.max(num_classifiers,num_workers)).setNumTasks(ensemble_size).
-			customGrouping("evaluate_local_grouping", "evaluate", new AllLocalGrouping()).
-			customGrouping("learn_local_grouping", "learn", new AllLocalGrouping());
-		
-		
-		builder.setBolt("combine_result", new CombinerBolt ("classifier_instance"), Math.max(num_workers, num_combiners)).customGrouping("classifier_instance", new LocalGrouping( new IdBasedGrouping()))
-		.setNumTasks(Math.max(num_workers, num_combiners));
-		
-		//builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("combine_result", new LocalGrouping(new IdBasedGrouping()));
-		
-		builder.setBolt("aggregate_result", new CombinerBolt(ensemble_size), Math.max(num_workers, num_combiners)).customGrouping("combine_result", new IdBasedGrouping()).setNumTasks(Math.max(num_workers, num_aggregators) );
-		
-		builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));
+		builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("prediction_result", new LocalGrouping(new IdBasedGrouping()));
 		
 		conf.setNumAckers(num_workers);
 		conf.setNumWorkers(num_workers);
@@ -262,7 +180,7 @@ public class LocalStorm implements Serializable {
 		
 		
 	}
-	
+
 
 	public static void main(String[] args) throws Throwable
 	{

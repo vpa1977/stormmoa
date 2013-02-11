@@ -102,7 +102,7 @@ public class BaggingTopologyBroadcastBolt extends BaseRichBolt implements IRichB
 		
 		
 		
-		output.add(new moa.storm.topology.MessageIdentifier(m_task_id, m_instance_id));
+		output.add(new moa.storm.topology.message.MessageIdentifier(m_task_id, m_instance_id));
 		output.addAll(tuple.getValues());
 		int index = tuple.getFields().fieldIndex("instance");
 		output.set(index+1, inst);

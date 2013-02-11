@@ -3,7 +3,7 @@ package performance;
 import java.util.ArrayList;
 import java.util.List;
 
-import moa.storm.topology.MessageIdentifier;
+import moa.storm.topology.message.MessageIdentifier;
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.task.WorkerTopologyContext;

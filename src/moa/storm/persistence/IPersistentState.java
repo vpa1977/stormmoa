@@ -2,9 +2,6 @@ package moa.storm.persistence;
 
 import java.io.Serializable;
 
-
-
-
 public interface IPersistentState<T> extends Serializable {
 
 	public abstract long getLong(String row, String column);

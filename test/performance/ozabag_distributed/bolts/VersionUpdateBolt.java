@@ -6,7 +6,7 @@ import java.util.Map;
 
 import moa.storm.persistence.IPersistentState;
 import moa.storm.persistence.IStateFactory;
-import moa.storm.topology.MessageIdentifier;
+import moa.storm.topology.message.MessageIdentifier;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;

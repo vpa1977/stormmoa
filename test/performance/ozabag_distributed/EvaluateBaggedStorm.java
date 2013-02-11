@@ -6,10 +6,10 @@ import java.util.HashMap;
 
 import moa.storm.persistence.HDFSState;
 import moa.storm.persistence.IStateFactory;
-import moa.storm.topology.IdBasedGrouping;
-import moa.storm.topology.MOAStreamSpout;
+import moa.storm.topology.grouping.IdBasedGrouping;
 import moa.streams.generators.RandomTreeGenerator;
 import performance.LocalGrouping;
+import performance.MOAStreamSpout;
 import performance.state.DummyPersistentState;
 import performance.state.DummyStateFactory;
 import backtype.storm.Config;
