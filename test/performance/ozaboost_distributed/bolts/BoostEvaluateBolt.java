@@ -89,13 +89,16 @@ public class BoostEvaluateBolt extends BasePartition implements IRichBolt
 				for (int i = 0 ; i< m_wrapper.size() ; i ++)
 				{
 					BoostingMember m = m_wrapper.get(i);
-					DoubleVector vote =new DoubleVector(m.m_classifier.getVotesForInstance( inst ));
-					if (vote.sumOfValues() > 0.0) 
-					{
-	                    vote.normalize();
-	                    vote.scaleValues(getEnsembleMemberWeight(m));
-	                    sum.addValues(vote);
-	                }
+					double weight = getEnsembleMemberWeight(m);
+					if (weight> 0) {
+						DoubleVector vote =new DoubleVector(m.m_classifier.getVotesForInstance( inst ));
+						if (vote.sumOfValues() > 0.0) 
+						{
+		                    vote.normalize();
+		                    vote.scaleValues(getEnsembleMemberWeight(m));
+		                    sum.addValues(vote);
+		                }
+					}
 				}
 				results.add(sum);
 			}

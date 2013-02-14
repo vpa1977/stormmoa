@@ -12,6 +12,7 @@ import moa.core.MiscUtils;
 import moa.options.ClassOption;
 import moa.options.Option;
 import weka.core.Instance;
+import weka.core.Instances;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -26,6 +27,7 @@ public class ClassifierBolt extends BaseRichBolt implements IRichBolt
 	private Classifier m_wrapper;
 	private String m_cli_string;
 	public Random classifierRandom = new Random();
+	private Instances m_header;
 	
 	private Classifier getClassifier(String cliString) throws RuntimeException {
 		Classifier cls;
@@ -45,6 +47,12 @@ public class ClassifierBolt extends BaseRichBolt implements IRichBolt
 		m_cli_string = cliString;
 	}
 	
+	public ClassifierBolt(String classifier, Instances header) {
+		this.m_cli_string = classifier;
+		this.m_header = header;
+	}
+
+
 	@Override
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {
@@ -64,6 +72,8 @@ public class ClassifierBolt extends BaseRichBolt implements IRichBolt
 				int weight =  MiscUtils.poisson(1.0, this.classifierRandom);
 				if (weight > 0) {
 					Instance trainInst = (Instance) (value).copy();
+					if (m_header != null)
+						trainInst.setDataset(m_header);
 					trainInst.setWeight(trainInst.weight() * weight);
 					m_wrapper.trainOnInstance(trainInst);
 				//	m_state.set("classifier"+id,m_wrapper);
@@ -84,7 +94,13 @@ public class ClassifierBolt extends BaseRichBolt implements IRichBolt
 				List<Instance> list = (List<Instance>) instance;
 				Iterator<Instance> it = list.iterator();
 				while (it.hasNext())
-					results.add(new DoubleVector(m_wrapper.getVotesForInstance( it.next() )));
+				{
+					Instance next = (Instance)it.next().copy();
+					if (m_header != null)
+						next.setDataset(m_header);
+
+					results.add(new DoubleVector(m_wrapper.getVotesForInstance(next )));
+				}
 					
 				objs.add(results);
 				//objs.add( new DoubleVector(new double[]{0,0}));

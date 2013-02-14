@@ -14,6 +14,7 @@ import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
+import moa.storm.persistence.WekaSerializers;
 import moa.storm.topology.grouping.IdBasedGrouping;
 import moa.storm.topology.meta.MemoryOnlyOzaBag;
 import moa.streams.generators.RandomTreeGenerator;
@@ -22,6 +23,7 @@ import org.apache.log4j.Logger;
 
 
 import weka.core.Instance;
+import weka.core.Instances;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
@@ -149,13 +151,12 @@ public class LocalStorm extends MemoryOnlyOzaBag implements Serializable {
 
 		RandomTreeGenerator stream = new RandomTreeGenerator();
 		stream.prepareForUse();
-		builder.setSpout("learner_stream", new MOAStreamSpout(stream, 10000));
 		
 		stream = new RandomTreeGenerator();
 		stream.prepareForUse();
 		MOAStreamSpout predict = new MOAStreamSpout(stream, 0);
-		MOAStreamSpout learn = new MOAStreamSpout(stream, 10000);
-		
+		MOAStreamSpout learn = new MOAStreamSpout(stream, 100);
+		m_header = stream.nextInstance().dataset();
 		build("trees.HoeffdingTree -m 10000000 -e 10000",
 				builder, ensemble_size, num_workers, num_classifiers,
 				num_combiners, num_aggregators, learn,predict);
@@ -164,6 +165,7 @@ public class LocalStorm extends MemoryOnlyOzaBag implements Serializable {
 		
 		conf.setNumAckers(num_workers);
 		conf.setNumWorkers(num_workers);
+		WekaSerializers.register(conf);
 		
 		conf.setMaxSpoutPending(num_pending);
 		if ("true".equals(System.getProperty("localmode")))

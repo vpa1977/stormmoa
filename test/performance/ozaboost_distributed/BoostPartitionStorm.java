@@ -261,8 +261,8 @@ public class BoostPartitionStorm implements Serializable {
 					MOAStreamSpout evaluate_stream = new MOAStreamSpout(stream, 0);
 					
 					buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree -m 1000000 -e 10000", num_workers, ensemble_size, num_classifiers);
-					buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
-					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+					//buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
+					//builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
 					
 					
 					Config conf = new Config();
@@ -296,7 +296,7 @@ public class BoostPartitionStorm implements Serializable {
 			TopologyBuilder builder = new TopologyBuilder();
 			RandomTreeGenerator stream = new RandomTreeGenerator();
 			stream.prepareForUse();
-			MOAStreamSpout moa_stream = new MOAStreamSpout(stream, 100);
+			MOAStreamSpout moa_stream = new MOAStreamSpout(stream, 0);
 
 			stream = new RandomTreeGenerator();
 			stream.prepareForUse();

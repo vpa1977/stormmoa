@@ -12,13 +12,19 @@ import moa.storm.topology.meta.bolts.WorkerBroadcastBolt;
 import performance.AllLocalGrouping;
 import performance.CombinerBolt;
 import performance.LocalGrouping;
+import weka.core.Instances;
 import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.TopologyBuilder;
 
 public class MemoryOnlyOzaBag {
 
-	public static final List<String> FIELDS = Arrays.asList(new String[]{"instance_id", "instance"});
+	protected Instances m_header;
+	public static final List<String> FIELDS = Arrays.asList(new String[]{"instance"});
 	
+	public MemoryOnlyOzaBag(Instances header)
+	{
+		m_header = header;
+	}
 
 	public void build(String classifier, TopologyBuilder builder, int ensemble_size, int num_workers,
 			int num_classifiers, int num_combiners, int num_aggregators, IRichSpout learn, IRichSpout predict) {
@@ -34,7 +40,7 @@ public class MemoryOnlyOzaBag {
 				
 				builder.setBolt("learn_local_grouping", new WorkerBroadcastBolt("learn",FIELDS), num_workers).customGrouping("deserialize", "learn", new AllGrouping());
 				
-				builder.setBolt("classifier_instance", new ClassifierBolt(classifier),Math.max(num_classifiers,num_workers)).setNumTasks(ensemble_size).
+				builder.setBolt("classifier_instance", new ClassifierBolt(classifier, m_header),Math.max(num_classifiers,num_workers)).setNumTasks(ensemble_size).
 					customGrouping("evaluate_local_grouping", "evaluate", new AllLocalGrouping()).
 					customGrouping("learn_local_grouping", "learn", new AllLocalGrouping());
 				

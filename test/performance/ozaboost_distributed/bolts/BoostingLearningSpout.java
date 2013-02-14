@@ -110,8 +110,11 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 	@Override
 	public void fail(Object msgId) {
 		super.fail(msgId);
-		m_reset = true;
-		m_sent_to_save =-1;
+		if (m_sent_to_save > 0)
+		{
+			m_reset = true;
+			m_sent_to_save =-1;
+		}
 	}
 
 	@Override

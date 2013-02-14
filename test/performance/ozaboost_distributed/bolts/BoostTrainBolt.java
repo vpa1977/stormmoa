@@ -49,6 +49,7 @@ public class BoostTrainBolt extends BasePartition implements IRichBolt {
 	private long m_last_sent_version;
 	private boolean m_b_first_save = false;
 	private boolean pureBoostOption;
+	private boolean m_last;
 
 	private Classifier createClassifier(String cliString) throws RuntimeException {
 		Classifier cls;
@@ -81,7 +82,6 @@ public class BoostTrainBolt extends BasePartition implements IRichBolt {
 		m_version = -1;
 		
 		m_b_first_save =false;
-		
 	}
 
 	@Override
