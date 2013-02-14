@@ -14,7 +14,7 @@ import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
-import moa.storm.persistence.WekaSerializers;
+import moa.storm.kryo.WekaSerializers;
 import moa.storm.topology.grouping.IdBasedGrouping;
 import moa.storm.topology.meta.MemoryOnlyOzaBag;
 import moa.streams.generators.RandomTreeGenerator;

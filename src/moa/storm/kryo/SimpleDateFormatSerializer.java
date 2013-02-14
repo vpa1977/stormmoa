@@ -1,4 +1,4 @@
-package moa.storm.persistence;
+package moa.storm.kryo;
 
 import java.text.SimpleDateFormat;
 
