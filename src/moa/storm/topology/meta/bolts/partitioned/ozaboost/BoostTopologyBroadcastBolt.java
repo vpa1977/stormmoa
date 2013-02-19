@@ -1,4 +1,4 @@
-package performance.ozaboost_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned.ozaboost;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

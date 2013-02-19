@@ -1,11 +1,10 @@
-package performance.ozabag_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned;
 
 import java.util.List;
 import java.util.Map;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.base.BaseRichBolt;
 
 public abstract class BasePartition extends BaseRichBolt {

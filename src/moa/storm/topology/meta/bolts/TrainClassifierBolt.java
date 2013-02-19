@@ -10,19 +10,16 @@ import moa.classifiers.Classifier;
 import moa.core.MiscUtils;
 import moa.options.ClassOption;
 import moa.options.Option;
-import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.IPersistentState;
+import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.message.EnsembleCommand;
 import moa.storm.topology.message.Reset;
-import moa.trident.topology.LearnerWrapper;
-import storm.trident.state.StateFactory;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
 /**

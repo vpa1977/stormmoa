@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import moa.core.SizeOf;
 import moa.storm.topology.message.EnsembleCommand;
-
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;

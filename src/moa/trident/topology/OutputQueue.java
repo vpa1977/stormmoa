@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Properties;
 
-
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import storm.trident.operation.Function;

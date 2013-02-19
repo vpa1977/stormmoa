@@ -1,4 +1,4 @@
-package performance.ozaboost_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned;
 
 import java.util.List;
 import java.util.Map;
@@ -6,8 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import moa.storm.persistence.IPersistentState;
 import moa.storm.persistence.IStateFactory;
-import performance.ozaboost_distributed.BoostingMember;
-
+import moa.storm.persistence.ensemble_members.EnsembleMember;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -16,12 +15,12 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-public class SaveBolt extends BaseRichBolt implements IRichBolt
+public class SaveBolt<T extends EnsembleMember> extends BaseRichBolt implements IRichBolt
 {
 	
-	private static ConcurrentHashMap<String, BoostingMember> m_map = new ConcurrentHashMap<String, BoostingMember>();
+	private static ConcurrentHashMap<String, Object> m_map = new ConcurrentHashMap<String, Object>();
 	private static SaveBolt m_instance; 
-	private transient IPersistentState<BoostingMember> m_classifier_state;
+	private transient IPersistentState<T> m_classifier_state;
 	private IStateFactory m_state_factory;
 	private OutputCollector m_collector;
 	
@@ -52,8 +51,8 @@ public class SaveBolt extends BaseRichBolt implements IRichBolt
 	@Override
 	public void execute(Tuple input) {
 		long version = input.getLongByField("version");
-		List<BoostingMember> ensemble_partition = (List<BoostingMember>)input.getValueByField("ensemble_partition");
-		for (BoostingMember m : ensemble_partition)
+		List<T> ensemble_partition = (List<T>)input.getValueByField("ensemble_partition");
+		for (T m : ensemble_partition)
 		{
 			m_classifier_state.put(m.m_key,String.valueOf(version), m);
 		}
@@ -68,9 +67,8 @@ public class SaveBolt extends BaseRichBolt implements IRichBolt
 		declarer.declareStream("persist_notify", new Fields("version")); 
 	}
 	
-	public void put(String m_key, long m_version, BoostingMember m_wrapper) {
-		BoostingMember copy = m_wrapper;
-		copy.m_classifier = copy.m_classifier.copy();
+	public void put(String m_key, long m_version, T m_wrapper) {
+		EnsembleMember copy = m_wrapper.copy();
 		m_map.put(m_key + "-" + m_version, copy);
 	}
 

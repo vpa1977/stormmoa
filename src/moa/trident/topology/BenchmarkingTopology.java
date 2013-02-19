@@ -11,7 +11,6 @@ import moa.streams.generators.RandomTreeGenerator;
 import org.apache.log4j.Logger;
 
 import performance.MOAStreamSpout;
-
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
 import storm.trident.operation.Function;

@@ -1,10 +1,5 @@
 package moa.storm.kryo;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
-
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instances;
@@ -18,6 +13,5 @@ public class WekaSerializers {
 		conf.registerSerialization(Attribute.class, AttributeSerializer.class);
 		conf.registerSerialization(Instances.class, InstancesSerializer.class);
 		conf.registerSerialization(ProtectedProperties.class, ProtectedPropertiesSerializer.class);
-		conf.registerSerialization(SimpleDateFormat.class, SimpleDateFormatSerializer.class);
 	}
 }

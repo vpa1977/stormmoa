@@ -10,29 +10,14 @@ import java.util.Map;
 
 import moa.storm.persistence.HDFSState;
 import moa.storm.persistence.IStateFactory;
-import moa.storm.topology.grouping.AllGrouping;
 import moa.storm.topology.grouping.IdBasedGrouping;
-import moa.storm.topology.meta.bolts.EvaluateSpout;
-import moa.storm.topology.meta.bolts.TopologyBroadcastBolt;
-import moa.storm.topology.meta.bolts.WorkerBroadcastBolt;
-import moa.storm.topology.spout.InstanceStreamSource;
-import moa.storm.topology.spout.LearnSpout;
+import moa.storm.topology.meta.PartitionedOzaBag;
 import moa.streams.generators.RandomTreeGenerator;
 
 import org.apache.log4j.Logger;
 
-import performance.AllLocalGrouping;
-import performance.CombinerBolt;
 import performance.LocalGrouping;
 import performance.MOAStreamSpout;
-import performance.ozabag_distributed.bolts.BagEvaluateBolt;
-import performance.ozabag_distributed.bolts.BaggingTopologyBroadcastBolt;
-import performance.ozabag_distributed.bolts.BaggingTrainBolt;
-import performance.ozabag_distributed.bolts.BaggingLearningSpout;
-import performance.ozabag_distributed.bolts.PartitionedCombinerBolt;
-import performance.ozabag_distributed.bolts.PartitionedSharedStorageBolt;
-import performance.ozabag_distributed.bolts.SaveBolt;
-import performance.ozabag_distributed.bolts.VersionUpdateBolt;
 import performance.state.DummyPersistentState;
 import performance.state.DummyStateFactory;
 import backtype.storm.Config;
@@ -49,7 +34,7 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 
-public class BagPartitionStorm implements Serializable {
+public class BagPartitionStorm extends PartitionedOzaBag implements Serializable {
 
 	public static final long GLOBAL_BATCH_SIZE = 100;
 	
@@ -147,59 +132,6 @@ public class BagPartitionStorm implements Serializable {
 		}
 		
 	}
-	
-	public void buildLearnPart(IStateFactory cassandra, InstanceStreamSource source, TopologyBuilder builder,String clasisifer_cli, int num_workers, int ensemble_size, int num_classifier_executors)
-	{
-		BaggingLearningSpout learn_spout = new BaggingLearningSpout(source, cassandra, 100);
-		builder.setSpout("learner_stream",  learn_spout);
-		BaggingTopologyBroadcastBolt broadcast = new BaggingTopologyBroadcastBolt("learn", BaggingLearningSpout.LEARN_STREAM_FIELDS);
-		
-		builder.setBolt("deserialize",broadcast,num_workers).shuffleGrouping("learner_stream",LearnSpout.EVENT_STREAM);
-		
-		builder.setBolt("learn_local_grouping", new WorkerBroadcastBolt("learn", BaggingLearningSpout.LEARN_STREAM_FIELDS), num_workers)
-			.customGrouping("deserialize", "learn", new AllGrouping());
-		
-		builder.setBolt("train_classifier", new BaggingTrainBolt(ensemble_size,broadcast.getFields(),clasisifer_cli,cassandra ),Math.max(num_classifier_executors,num_workers))
-			.setNumTasks(Math.max(num_classifier_executors,num_workers))
-			.customGrouping("learn_local_grouping", "learn", new AllLocalGrouping())
-			.customGrouping("learner_stream", LearnSpout.NOTIFICATION_STREAM, new AllGrouping());
-		
-		builder.setBolt("persist", new SaveBolt(cassandra), Math.max(num_classifier_executors,num_workers)).setNumTasks(Math.max(num_classifier_executors,num_workers))
-			.customGrouping("train_classifier","persist", new ShuffleLocalGrouping());
-		builder.setBolt("version_update", new VersionUpdateBolt(cassandra,"persist")).setNumTasks(1)
-			.shuffleGrouping("persist", "persist_notify");
-			
-	}
-
-	public void buildEvaluatePart(IStateFactory cassandra,InstanceStreamSource source, TopologyBuilder builder,int num_workers, int ensemble_size, 
-			int num_classifier_executors, int num_combiners, int num_aggregators)
-	{
-		EvaluateSpout evaluate_spout = new EvaluateSpout(source, cassandra, 100);
-		builder.setSpout("prediction_stream", evaluate_spout);
-		
-		
-		builder.setBolt("shared_storage", new PartitionedSharedStorageBolt(ensemble_size, cassandra, "evaluate_classifier"), num_workers)
-			.customGrouping("prediction_stream", EvaluateSpout.NOTIFICATION_STREAM,new AllGrouping());
-		
-		builder.setBolt("p_deserialize", new TopologyBroadcastBolt("evaluate", EvaluateSpout.EVALUATE_STREAM_FIELDS),num_workers).shuffleGrouping("prediction_stream");
-		
-		builder.setBolt("evaluate_local_grouping", new WorkerBroadcastBolt("evaluate", EvaluateSpout.EVALUATE_STREAM_FIELDS), num_workers).customGrouping("p_deserialize", "evaluate", new AllGrouping());
-
-		builder.setBolt("evaluate_classifier", new BagEvaluateBolt(ensemble_size,cassandra),Math.max(num_classifier_executors,num_workers))
-			.customGrouping("evaluate_local_grouping", "evaluate", new AllLocalGrouping())
-			.setNumTasks(Math.max(num_classifier_executors,num_workers));
-		
-		builder.setBolt("combine_result", new PartitionedCombinerBolt (ensemble_size,"evaluate_classifier"), Math.max(num_workers, num_combiners))
-			.customGrouping("evaluate_classifier", new LocalGrouping( new IdBasedGrouping()))
-			.setNumTasks(Math.max(num_workers, num_combiners));
-	
-		builder.setBolt("aggregate_result", new CombinerBolt(ensemble_size), Math.max(num_workers, num_combiners))
-			.customGrouping("combine_result", new IdBasedGrouping())
-			.setNumTasks(Math.max(num_workers, num_aggregators) );
-
-		
-	}
-	
 	
 	public BagPartitionStorm(Config conf,String[] args) throws Throwable
 	{

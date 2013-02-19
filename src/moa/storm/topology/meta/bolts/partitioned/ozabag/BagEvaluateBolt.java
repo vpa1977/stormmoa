@@ -1,41 +1,35 @@
-package performance.ozaboost_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned.ozabag;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import performance.ozaboost_distributed.BoostingMember;
-
-import moa.classifiers.Classifier;
 import moa.core.DoubleVector;
 import moa.storm.persistence.IStateFactory;
-import moa.storm.persistence.IPersistentState;
-import moa.storm.persistence.SharedStorageBolt;
-import moa.storm.topology.message.EnsembleCommand;
-import moa.storm.topology.message.Reset;
-import moa.trident.topology.LearnerWrapper;
-import storm.trident.state.StateFactory;
+import moa.storm.persistence.ensemble_members.BaggingMember;
+import moa.storm.persistence.ensemble_members.EnsembleMember;
+import moa.storm.topology.meta.bolts.partitioned.BasePartition;
+import moa.storm.topology.meta.bolts.partitioned.PartitionedSharedStorageBolt;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-public class BoostEvaluateBolt extends BasePartition implements IRichBolt
+public class BagEvaluateBolt extends BasePartition implements IRichBolt
 {
 	private OutputCollector m_collector;
 	private String m_key;
 
-	private transient ArrayList<BoostingMember> m_wrapper;
+	private transient ArrayList<BaggingMember> m_wrapper;
 	private IStateFactory m_state_factory;
 	private long m_version;
 	private long m_pending;
 
-	public BoostEvaluateBolt(int ensemble_size,IStateFactory classifierState) {
+	public BagEvaluateBolt(int ensemble_size,IStateFactory classifierState) {
 		super(ensemble_size);
 		m_state_factory = classifierState;
 	}
@@ -58,10 +52,10 @@ public class BoostEvaluateBolt extends BasePartition implements IRichBolt
 		if (version != m_version || m_wrapper == null ) 
 		{
 			m_version = version ;
-			m_wrapper = new ArrayList<BoostingMember>();
+			m_wrapper = new ArrayList<BaggingMember>();
 			for (int i = m_start_key ; i < m_start_key + m_partition_size; i ++)
 			{
-				BoostingMember m = (BoostingMember)PartitionedSharedStorageBolt.instance().get(m_key+i, m_version);
+				BaggingMember m = (BaggingMember)PartitionedSharedStorageBolt.instance().get(m_key+i, m_version);
 				if (m == null){
 					m_wrapper =null;
 					throw new RuntimeException("Unable to fetch "+ m_key + i + " "+ m_version);
@@ -88,17 +82,13 @@ public class BoostEvaluateBolt extends BasePartition implements IRichBolt
 				DoubleVector sum = new DoubleVector();
 				for (int i = 0 ; i< m_wrapper.size() ; i ++)
 				{
-					BoostingMember m = m_wrapper.get(i);
-					double weight = getEnsembleMemberWeight(m);
-					if (weight> 0) {
-						DoubleVector vote =new DoubleVector(m.m_classifier.getVotesForInstance( inst ));
-						if (vote.sumOfValues() > 0.0) 
-						{
-		                    vote.normalize();
-		                    vote.scaleValues(getEnsembleMemberWeight(m));
-		                    sum.addValues(vote);
-		                }
-					}
+					EnsembleMember m = m_wrapper.get(i);
+					DoubleVector vote =new DoubleVector(m.m_classifier.getVotesForInstance( inst ));
+					if (vote.sumOfValues() > 0.0) 
+					{
+	                    vote.normalize();
+	                    sum.addValues(vote);
+	                }
 				}
 				results.add(sum);
 			}
@@ -116,14 +106,6 @@ public class BoostEvaluateBolt extends BasePartition implements IRichBolt
 		m_collector.ack(tuple);
 	}
 		
-    protected double getEnsembleMemberWeight(BoostingMember m) {
-        double em = m.m_swms / (m.m_scms + m.m_swms);
-        if ((em == 0.0) || (em > 0.5)) {
-            return 0.0;
-        }
-        double Bm = em / (1.0 - em);
-        return Math.log(1.0 / Bm);
-    }
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {

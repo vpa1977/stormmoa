@@ -109,11 +109,6 @@ public class TopologyBroadcastBolt extends BaseRichBolt implements IRichBolt
 		
 		m_collector.emit(m_stream_id,tuple,output);
 		m_collector.ack(tuple);
-		if (m_instance_id % 10000 == 0)
-		{
-			System.out.println("Deserialized "+ m_instance_id+ " on "+ m_task_id);
-		}
-		
 	}
 
 	@Override

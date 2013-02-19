@@ -1,18 +1,11 @@
 package performance;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
-import javax.xml.bind.DatatypeConverter;
 
 import moa.storm.kryo.WekaSerializers;
 import moa.storm.topology.grouping.IdBasedGrouping;
@@ -21,9 +14,6 @@ import moa.streams.generators.RandomTreeGenerator;
 
 import org.apache.log4j.Logger;
 
-
-import weka.core.Instance;
-import weka.core.Instances;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
@@ -33,7 +23,6 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
 public class LocalStorm extends MemoryOnlyOzaBag implements Serializable {

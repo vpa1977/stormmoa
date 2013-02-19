@@ -1,25 +1,21 @@
-package performance.ozabag_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned.ozabag;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import performance.ozabag_distributed.BaggingMember;
-
-
 import moa.classifiers.Classifier;
-import moa.classifiers.meta.OzaBoost;
 import moa.core.MiscUtils;
 import moa.options.ClassOption;
 import moa.options.Option;
-import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.IPersistentState;
+import moa.storm.persistence.IStateFactory;
+import moa.storm.persistence.ensemble_members.BaggingMember;
+import moa.storm.persistence.ensemble_members.EnsembleMember;
 import moa.storm.topology.message.EnsembleCommand;
 import moa.storm.topology.message.Reset;
-import moa.trident.topology.LearnerWrapper;
-import storm.trident.state.StateFactory;
+import moa.storm.topology.meta.bolts.partitioned.BasePartition;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -126,7 +122,7 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 			Boolean persist = tuple.getBooleanByField("persist");
 			if (persist.booleanValue())
 				System.out.println("Should save "+version);
-			for (BaggingMember wrapper : m_wrapper)
+			for (EnsembleMember wrapper : m_wrapper)
 			{
 
 				int weight = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -143,7 +139,7 @@ public class BaggingTrainBolt extends BasePartition implements IRichBolt {
 				ArrayList<Object> message = new ArrayList<Object>();
 				message.add(m_version);
 				ArrayList<BaggingMember> copy = new ArrayList<BaggingMember>();
-				for (BaggingMember m : m_wrapper)
+				for (EnsembleMember m : m_wrapper)
 				{
 					BaggingMember b_copy = new BaggingMember(m);
 					copy.add(b_copy);

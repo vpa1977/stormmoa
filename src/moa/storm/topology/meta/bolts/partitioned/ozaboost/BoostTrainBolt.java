@@ -1,24 +1,20 @@
-package performance.ozaboost_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned.ozaboost;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import performance.ozaboost_distributed.BoostingMember;
-
 import moa.classifiers.Classifier;
-import moa.classifiers.meta.OzaBoost;
 import moa.core.MiscUtils;
 import moa.options.ClassOption;
 import moa.options.Option;
-import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.IPersistentState;
+import moa.storm.persistence.IStateFactory;
+import moa.storm.persistence.ensemble_members.BoostingMember;
 import moa.storm.topology.message.EnsembleCommand;
 import moa.storm.topology.message.Reset;
-import moa.trident.topology.LearnerWrapper;
-import storm.trident.state.StateFactory;
+import moa.storm.topology.meta.bolts.partitioned.BasePartition;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;

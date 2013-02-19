@@ -1,11 +1,10 @@
-package performance.ozaboost_distributed;
+package moa.storm.persistence.ensemble_members;
 
 import java.io.Serializable;
 
-import moa.classifiers.Classifier;
-
-public class BoostingMember implements Serializable
+public class BoostingMember extends EnsembleMember implements Serializable
 {	
+
 	public BoostingMember(){}
 	
 	
@@ -16,9 +15,15 @@ public class BoostingMember implements Serializable
 		m_training_weight_seen_by_model = m.m_training_weight_seen_by_model;
 		m_key = m.m_key;
 	}
-	public Classifier m_classifier;
+
+	@Override
+	public EnsembleMember copy() {
+		return new BoostingMember(this);
+	}
+
+	
+	
 	public double m_scms;
 	public double m_swms;
 	public double m_training_weight_seen_by_model;
-	public String m_key;
 }

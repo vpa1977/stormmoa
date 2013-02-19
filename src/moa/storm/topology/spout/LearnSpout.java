@@ -6,19 +6,14 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-
-import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.IPersistentState;
+import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.message.EnsembleCommand;
 import moa.storm.topology.message.MessageIdentifier;
 import moa.storm.topology.message.Reset;
-
-import storm.trident.state.StateFactory;
-import weka.core.Instance;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;

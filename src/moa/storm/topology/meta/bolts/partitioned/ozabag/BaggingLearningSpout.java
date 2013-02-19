@@ -1,4 +1,4 @@
-package performance.ozaboost_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned.ozabag;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -6,19 +6,15 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-
-import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.IPersistentState;
+import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.message.EnsembleCommand;
 import moa.storm.topology.message.MessageIdentifier;
 import moa.storm.topology.message.Reset;
 import moa.storm.topology.spout.InstanceStreamSource;
-
-import storm.trident.state.StateFactory;
 import weka.core.Instance;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -27,7 +23,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 
-public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
+public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 
 	public static final List<String> LEARN_STREAM_FIELDS = Arrays.asList( new String[]{"instance", "lambda_d","version","persist"});
 	public static final String NOTIFICATION_STREAM = "notification";
@@ -40,6 +36,7 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 	private SpoutOutputCollector m_collector;
 	private IPersistentState<String> m_state;
 	private long m_version;
+	private long m_sent_to_save;
 	private boolean m_reset;
 	private int m_task_id;
 	private long m_id;
@@ -48,10 +45,9 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 
 	private Measurement m_measurement;
 	private ArrayList<Instance> m_instance_cache;
-	private long m_sent_to_save;
 	
 
-	public BoostingLearningSpout(InstanceStreamSource stream_src, IStateFactory classifierState,
+	public BaggingLearningSpout(InstanceStreamSource stream_src, IStateFactory classifierState,
 			long pending) {
 		m_stream_src = stream_src;
 		m_classifier_state = classifierState;
@@ -67,11 +63,11 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 		m_version = readVersion(m_state)+1;
 		if (m_version <0 )
 			m_version =0;
-		m_sent_to_save = -1;
 		m_reset = true;
 		m_task_id = context.getThisTaskId();
 		m_id = 0;
 		m_key = context.getThisTaskId();
+		m_sent_to_save = -1;
 		
 	}
 
@@ -94,10 +90,11 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 		message.add(m_instance_cache.remove(0));
 		message.add(1.0);
 		message.add(m_version);
-		if (m_version % m_pending == 0 && readVersion(m_state) >= m_sent_to_save)
+		if (m_version % m_pending == 0 && readVersion(m_state) >= m_sent_to_save) 
 		{
+			System.out.println("Sening to save "+m_version);
 			message.add(true);
-			m_sent_to_save = m_version;
+			m_sent_to_save  = m_version;
 		}
 		else
 			message.add(false);
@@ -110,11 +107,8 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 	@Override
 	public void fail(Object msgId) {
 		super.fail(msgId);
-		if (m_sent_to_save > 0)
-		{
-			m_reset = true;
-			m_sent_to_save =-1;
-		}
+		m_reset = true;
+		m_sent_to_save = -1;
 	}
 
 	@Override
@@ -123,8 +117,6 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 		if (m_measurement == null)
 			m_measurement = new Measurement();
 		m_measurement.check();
-
-		super.ack(msgId);
 		m_measurement.write();
 		m_version++;
 

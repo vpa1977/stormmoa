@@ -7,17 +7,14 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
-import moa.storm.persistence.CassandraState;
 import moa.storm.persistence.HDFSState;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.grouping.IdBasedGrouping;
 import moa.storm.topology.meta.OzaBag;
 import moa.streams.generators.RandomTreeGenerator;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import storm.trident.state.StateFactory;
 import backtype.storm.Config;
 import backtype.storm.ILocalCluster;
 import backtype.storm.StormSubmitter;
@@ -27,7 +24,6 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.testing.MkClusterParam;
 import backtype.storm.testing.TestJob;
 import backtype.storm.topology.IRichBolt;
-import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.topology.base.BaseRichBolt;
@@ -107,7 +103,7 @@ public class ClonedStorm extends OzaBag implements Serializable {
 				m_start = System.currentTimeMillis();
 				count = 0;
 			}
-
+			
 		}
 
 		@Override

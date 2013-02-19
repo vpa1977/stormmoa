@@ -1,4 +1,4 @@
-package performance.ozabag_distributed.bolts;
+package moa.storm.topology.meta.bolts.partitioned.ozabag;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,10 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import performance.Prediction;
-
 import moa.core.DoubleVector;
-
+import performance.Prediction;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;

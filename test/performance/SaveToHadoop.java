@@ -7,18 +7,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.zip.DeflaterOutputStream;
 
+import moa.classifiers.Classifier;
+import moa.core.SizeOf;
+import moa.streams.generators.RandomTreeGenerator;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
-
-
-
-import moa.classifiers.Classifier;
-import moa.core.SizeOf;
-import moa.storm.persistence.CassandraState;
-import moa.streams.generators.RandomTreeGenerator;
 
 public class SaveToHadoop {
 	

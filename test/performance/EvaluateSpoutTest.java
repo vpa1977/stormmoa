@@ -1,8 +1,6 @@
 package performance;
 
-import static org.junit.Assert.*;
-
-
+import static org.junit.Assert.assertEquals;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.message.MessageIdentifier;
 import moa.storm.topology.meta.bolts.EvaluateSpout;
@@ -11,13 +9,9 @@ import moa.streams.generators.RandomTreeGenerator;
 
 import org.junit.Test;
 
-import backtype.storm.task.TopologyContext;
-
 import performance.state.DummyPersistentState;
 import performance.state.DummyStateFactory;
-
-
-import weka.classifiers.trees.RandomTree;
+import backtype.storm.task.TopologyContext;
 
 public class EvaluateSpoutTest {
 	

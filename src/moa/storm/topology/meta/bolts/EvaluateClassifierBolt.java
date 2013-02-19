@@ -5,16 +5,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-
 import moa.classifiers.Classifier;
 import moa.core.DoubleVector;
 import moa.storm.persistence.IStateFactory;
-import moa.storm.persistence.IPersistentState;
 import moa.storm.persistence.SharedStorageBolt;
-import moa.storm.topology.message.EnsembleCommand;
-import moa.storm.topology.message.Reset;
-import moa.trident.topology.LearnerWrapper;
-import storm.trident.state.StateFactory;
 import weka.core.Instance;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;

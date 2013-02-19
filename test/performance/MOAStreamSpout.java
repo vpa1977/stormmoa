@@ -5,10 +5,8 @@ import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 
 import moa.storm.topology.message.MessageIdentifier;
 import moa.storm.topology.spout.InstanceStreamSource;
