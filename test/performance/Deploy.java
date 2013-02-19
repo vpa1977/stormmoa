@@ -1,23 +1,18 @@
 package performance;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import moa.trident.topology.StormClusterTopology;
-import storm.trident.Stream;
 import storm.trident.TridentTopology;
-import storm.trident.operation.BaseFilter;
-import storm.trident.tuple.TridentTuple;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
-import backtype.storm.tuple.Fields;
 import backtype.storm.utils.NimbusClient;
-import backtype.storm.utils.Utils;
-
-import com.rapportive.storm.spout.AMQPSpout;
+import backtype.storm.utils.Utils; 
 
 public class Deploy {
 	
@@ -30,14 +25,14 @@ public class Deploy {
 	public static void main(String[] args) throws Throwable
 	{
 		Properties prp = new Properties();
-		prp.load(Deploy.class.getResourceAsStream("/ml_storm_cluster.properties"));
+		prp.load(Deploy.class.getResourceAsStream("/storm_cluster.properties"));
 
 		
-		//ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
-		//populate(zos, new File("bin"), new File("bin").getAbsolutePath());
-		//zos.close();
-		//System.setProperty("storm.home", prp.getProperty("storm.home"));
-		//System.setProperty("storm.jar", prp.getProperty("storm.jar"));
+		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream("topology.jar"));
+		populate(zos, new File("bin"), new File("bin").getAbsolutePath());
+		zos.close();
+		System.setProperty("storm.home", prp.getProperty("storm.home"));
+		System.setProperty("storm.jar", prp.getProperty("storm.jar"));
 		
 		String topologyName = prp.getProperty("storm.topology_name");
 		
@@ -51,19 +46,8 @@ public class Deploy {
 		}
 		catch (Throwable t){}
 	    
-		TridentTopology topology = new TridentTopology();
-		conf.put(AMQPSpout.CONFIG_PREFETCH_COUNT, 1000000);
-		StormClusterTopology storm = new StormClusterTopology("/ml_storm_cluster.properties");
-		Stream s = storm.createLearningStream(null, topology);
-		s.each(new Fields("instance"), new BaseFilter(){
-
-			@Override
-			public boolean isKeep(TridentTuple tuple) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-			
-		});
+		
+		TridentTopology topology = new StormClusterTopology("/storm_cluster.properties").create(conf);
 		StormSubmitter.submitTopology(topologyName, conf, topology.build());
 	}
 
