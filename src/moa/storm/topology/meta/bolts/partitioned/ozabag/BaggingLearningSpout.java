@@ -1,9 +1,5 @@
 package moa.storm.topology.meta.bolts.partitioned.ozabag;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +21,8 @@ import backtype.storm.tuple.Fields;
 
 public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 
-	public static final List<String> LEARN_STREAM_FIELDS = Arrays.asList( new String[]{"instance", "lambda_d","version","persist"});
+	public static final List<String> LEARN_STREAM_FIELDS = Arrays
+			.asList(new String[] { "instance", "lambda_d", "version", "persist" });
 	public static final String NOTIFICATION_STREAM = "notification";
 	public static final String COMMAND_FIELD = "command";
 	private static final int NOTIFICATION_ID = -1;
@@ -38,17 +35,15 @@ public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 	private long m_version;
 	private long m_sent_to_save;
 	private boolean m_reset;
-	private int m_task_id;
+
 	private long m_id;
 	private long m_pending;
 	private int m_key;
 
-	private Measurement m_measurement;
 	private ArrayList<Instance> m_instance_cache;
-	
 
-	public BaggingLearningSpout(InstanceStreamSource stream_src, IStateFactory classifierState,
-			long pending) {
+	public BaggingLearningSpout(InstanceStreamSource stream_src,
+			IStateFactory classifierState, long pending) {
 		m_stream_src = stream_src;
 		m_classifier_state = classifierState;
 		m_pending = pending;
@@ -58,19 +53,18 @@ public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 	public void open(Map conf, TopologyContext context,
 			SpoutOutputCollector collector) {
 		m_collector = collector;
-		
+
 		m_state = ((IStateFactory) m_classifier_state).create();
-		m_version = readVersion(m_state)+1;
-		if (m_version <0 )
-			m_version =0;
+		m_version = readVersion(m_state) + 1;
+		if (m_version < 0)
+			m_version = 0;
 		m_reset = true;
-		m_task_id = context.getThisTaskId();
+
 		m_id = 0;
 		m_key = context.getThisTaskId();
 		m_sent_to_save = -1;
-		
-	}
 
+	}
 
 	@Override
 	public void nextTuple() {
@@ -85,117 +79,45 @@ public class BaggingLearningSpout extends BaseRichSpout implements IRichSpout {
 		}
 		if (m_instance_cache == null || m_instance_cache.size() == 0)
 			m_instance_cache = m_stream_src.read();
-		
+
 		List<Object> message = new ArrayList<Object>();
 		message.add(m_instance_cache.remove(0));
 		message.add(1.0);
 		message.add(m_version);
-		if (m_version % m_pending == 0 && readVersion(m_state) >= m_sent_to_save) 
-		{
-			System.out.println("Sening to save "+m_version);
+		if (m_version % m_pending == 0
+				&& readVersion(m_state) >= m_sent_to_save) {
+			System.out.println("Sening to save " + m_version);
 			message.add(true);
-			m_sent_to_save  = m_version;
-		}
-		else
+			m_sent_to_save = m_version;
+		} else
 			message.add(false);
-		
-			
-		m_collector.emit(EVENT_STREAM, message, new MessageIdentifier(m_key,m_version));
+
+		m_collector.emit(EVENT_STREAM, message, new MessageIdentifier(m_key,
+				m_version));
 
 	}
 
 	@Override
 	public void fail(Object msgId) {
-		super.fail(msgId);
 		m_reset = true;
 		m_sent_to_save = -1;
+		super.fail(msgId);
 	}
 
 	@Override
 	public void ack(Object msgId) {
-		super.ack(msgId);
-		if (m_measurement == null)
-			m_measurement = new Measurement();
-		m_measurement.check();
-		m_measurement.write();
 		m_version++;
-
+		super.ack(msgId);
 	}
 
 	private long readVersion(IPersistentState state) {
 		return state.getLong("version", "version");
 	}
 
-
-
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(EVENT_STREAM,new Fields(LEARN_STREAM_FIELDS));
+		declarer.declareStream(EVENT_STREAM, new Fields(LEARN_STREAM_FIELDS));
 		declarer.declareStream(NOTIFICATION_STREAM, new Fields(COMMAND_FIELD));
 	}
-	
-	
-	
-	class Measurement implements Serializable{
-		public Measurement()
-		{
-			m_start = System.currentTimeMillis();
-			count = 0;
-			
-		}
-		
-		private int getPid() throws Throwable
-		{
-			java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
-			java.lang.reflect.Field jvm = runtime.getClass().getDeclaredField("jvm");
-			jvm.setAccessible(true);
-			sun.management.VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-			java.lang.reflect.Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-			pid_method.setAccessible(true);
-			int pid = (Integer) pid_method.invoke(mgmt);
-			return pid;
-		}			
 
-		private void writeResult(long period)
-		{
-			try {
-				
-				long tup_sec = count * 1000 /period;
-				
-				File f = new File("/home/vp37/learn"+ InetAddress.getLocalHost().getHostName() + "-" + getPid());
-				FileOutputStream fos = new FileOutputStream(f);
-				String result = "" +tup_sec;
-				fos.write(result.getBytes());
-				fos.write(" \r\n".getBytes());
-				fos.flush(); 
-				fos.close();
-			}
-			catch (Throwable t)
-			{
-				t.printStackTrace();
-			}
-		}
-		
-		public void check()
-		{
-			if (m_start == 0 ) 
-				m_start = System.currentTimeMillis();
-
-			count ++;
-		}
-		public void write()
-		{
-			long current =System.currentTimeMillis();
-			if (current - m_start > 1000 * 60)
-			{
-				writeResult(current - m_start);
-				m_start = System.currentTimeMillis();
-				count = 0;
-			}  
-		}
-		
-		long m_start;
-		long count;
-	}
-	
 }

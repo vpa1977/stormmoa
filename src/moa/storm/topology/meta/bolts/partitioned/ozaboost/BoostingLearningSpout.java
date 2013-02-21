@@ -37,12 +37,12 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 	private IPersistentState<String> m_state;
 	private long m_version;
 	private boolean m_reset;
-	private int m_task_id;
+	
 	private long m_id;
 	private long m_pending;
 	private int m_key;
 
-	private Measurement m_measurement;
+	
 	private ArrayList<Instance> m_instance_cache;
 	private long m_sent_to_save;
 	
@@ -65,7 +65,7 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 			m_version =0;
 		m_sent_to_save = -1;
 		m_reset = true;
-		m_task_id = context.getThisTaskId();
+	
 		m_id = 0;
 		m_key = context.getThisTaskId();
 		
@@ -105,24 +105,19 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 
 	@Override
 	public void fail(Object msgId) {
-		super.fail(msgId);
 		if (m_sent_to_save > 0)
 		{
 			m_reset = true;
 			m_sent_to_save =-1;
 		}
+		super.fail(msgId);
 	}
 
 	@Override
 	public void ack(Object msgId) {
+		m_version++;		
 		super.ack(msgId);
-		if (m_measurement == null)
-			m_measurement = new Measurement();
-		m_measurement.check();
 
-		super.ack(msgId);
-		m_measurement.write();
-		m_version++;
 
 	}
 
@@ -140,66 +135,6 @@ public class BoostingLearningSpout extends BaseRichSpout implements IRichSpout {
 	
 	
 	
-	class Measurement implements Serializable{
-		public Measurement()
-		{
-			m_start = System.currentTimeMillis();
-			count = 0;
-			
-		}
-		
-		private int getPid() throws Throwable
-		{
-			java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
-			java.lang.reflect.Field jvm = runtime.getClass().getDeclaredField("jvm");
-			jvm.setAccessible(true);
-			sun.management.VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-			java.lang.reflect.Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-			pid_method.setAccessible(true);
-			int pid = (Integer) pid_method.invoke(mgmt);
-			return pid;
-		}			
-
-		private void writeResult(long period)
-		{
-			try {
-				
-				long tup_sec = count * 1000 /period;
-				
-				File f = new File("/home/vp37/learn"+ InetAddress.getLocalHost().getHostName() + "-" + getPid());
-				FileOutputStream fos = new FileOutputStream(f);
-				String result = "" +tup_sec;
-				fos.write(result.getBytes());
-				fos.write(" \r\n".getBytes());
-				fos.flush(); 
-				fos.close();
-			}
-			catch (Throwable t)
-			{
-				t.printStackTrace();
-			}
-		}
-		
-		public void check()
-		{
-			if (m_start == 0 ) 
-				m_start = System.currentTimeMillis();
-
-			count ++;
-		}
-		public void write()
-		{
-			long current =System.currentTimeMillis();
-			if (current - m_start > 1000 * 60)
-			{
-				writeResult(current - m_start);
-				m_start = System.currentTimeMillis();
-				count = 0;
-			}  
-		}
-		
-		long m_start;
-		long count;
-	}
+	
 	
 }
