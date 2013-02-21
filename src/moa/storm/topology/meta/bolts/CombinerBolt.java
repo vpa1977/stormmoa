@@ -1,4 +1,4 @@
-package performance;
+package moa.storm.topology.meta.bolts;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import performance.Prediction;
 
 import moa.core.DoubleVector;
 import weka.core.Instance;
@@ -28,13 +30,13 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 	private boolean m_combiner = false;
 	private long m_emit_time;
 	private String m_component_name;
-	
+
 	public CombinerBolt(String component_name)
 	{
 		m_component_name = component_name;
 		m_ensemble_size = -1;
 	}
-	
+
 	public CombinerBolt(int ensemble_size)
 	{
 		m_ensemble_size = ensemble_size;
@@ -70,14 +72,14 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 	public void execute(Tuple input) {
 		int numVotes = input.getIntegerByField("votes").intValue();
 		m_emit_time += System.currentTimeMillis()  - input.getLong(4).longValue();
-		
+
 		Object instance_id = input.getValue(0);
 		ArrayList<Instance> instance = (ArrayList<Instance>)input.getValue(1);
 		ArrayList<DoubleVector> vect = (ArrayList<DoubleVector>)input.getValue(2) ;
-		
-		
-		
-		
+
+
+
+
 		Prediction prediction = m_predictions.get(instance_id);
 		if (prediction == null) {
 			prediction = new Prediction(instance, vect, input, numVotes);
@@ -103,25 +105,25 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 			System.out.println("Tuple Stat "+ m_tuple_stat + " for " + m_task_id + " avg emit "+ (m_emit_time/m_tuple_stat));
 			System.out.println("Half_count "+ half_count + " out of "+ size + " for tuples "+ (m_tuple_stat/m_ensemble_size));
 		}
-		
+
 		if (prediction.m_num_votes == m_ensemble_size)
 		{
 			ArrayList<Object> output = new ArrayList<Object>();
 			output.add(instance_id);
 			output.add(new ArrayList<Instance>());
-			
+
 			for (DoubleVector d : prediction.m_votes)
 			{
 				if (d.sumOfValues() > 0)
 					d.normalize();
 
 			}
-			
+
 			output.add(prediction.m_votes);
 			output.add( prediction.m_num_votes);
 			output.add( System.currentTimeMillis());
 			m_collector.emit(prediction.m_input,output);
-			
+
 			m_collector.ack(prediction.m_input);
 			m_predictions.remove(instance_id);
 		}
@@ -131,5 +133,5 @@ public class CombinerBolt extends BaseRichBolt implements IRichBolt
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("instance_id", "instance", "prediction","votes", "timestamp"));
 	}
-	
+
 }

@@ -6,6 +6,7 @@ import moa.storm.topology.grouping.AllGrouping;
 import moa.storm.topology.grouping.IdBasedGrouping;
 import moa.storm.topology.grouping.PassGrouping;
 import moa.storm.topology.grouping.ShuffleLocalGrouping;
+import moa.storm.topology.meta.bolts.CombinerBolt;
 import moa.storm.topology.meta.bolts.EvaluateSpout;
 import moa.storm.topology.meta.bolts.TopologyBroadcastBolt;
 import moa.storm.topology.meta.bolts.WorkerBroadcastBolt;
@@ -20,7 +21,6 @@ import moa.storm.topology.meta.bolts.partitioned.ozaboost.BoostingLearningSpout;
 import moa.storm.topology.spout.InstanceStreamSource;
 import moa.storm.topology.spout.LearnSpout;
 import performance.AllLocalGrouping;
-import performance.CombinerBolt;
 import performance.LocalGrouping;
 import backtype.storm.topology.TopologyBuilder;
 

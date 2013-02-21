@@ -1,9 +1,5 @@
 package performance;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +8,13 @@ import moa.storm.topology.message.MessageIdentifier;
 import moa.storm.topology.spout.InstanceStreamSource;
 import moa.streams.InstanceStream;
 import weka.core.Instance;
+import backtype.storm.hooks.ITaskHook;
+import backtype.storm.hooks.info.BoltAckInfo;
+import backtype.storm.hooks.info.BoltExecuteInfo;
+import backtype.storm.hooks.info.BoltFailInfo;
+import backtype.storm.hooks.info.EmitInfo;
+import backtype.storm.hooks.info.SpoutAckInfo;
+import backtype.storm.hooks.info.SpoutFailInfo;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;
@@ -21,65 +24,6 @@ import backtype.storm.tuple.Fields;
 
 public class MOAStreamSpout extends BaseRichSpout implements IRichSpout, InstanceStreamSource {
 	
-	class Measurement implements Serializable {
-		long count;
-		
-		long m_start;			
-
-		public Measurement()
-		{
-			m_start = System.currentTimeMillis();
-			count = 0;
-			
-		}
-		
-		public void check()
-		{
-			if (m_start == 0 ) 
-				m_start = System.currentTimeMillis();
-			long current =System.currentTimeMillis();
-			count ++;
-			if (current - m_start > 1000 * 60)
-			{
-				writeResult(current - m_start);
-				m_start = System.currentTimeMillis();
-				count = 0;
-			}  
-		}
-		private int getPid() throws Throwable
-		{
-			java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
-			java.lang.reflect.Field jvm = runtime.getClass().getDeclaredField("jvm");
-			jvm.setAccessible(true);
-			sun.management.VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-			java.lang.reflect.Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-			pid_method.setAccessible(true);
-			int pid = (Integer) pid_method.invoke(mgmt);
-			return pid;
-		}
-		private void writeResult(long period)
-		{
-			try {
-				
-				long tup_sec = count * 100 * 1000 /period;
-				
-				File f = new File("/home/vp37/moa_spout_learn"+ InetAddress.getLocalHost().getHostName() + "-" + getPid());
-				FileOutputStream fos = new FileOutputStream(f);
-				String result = "" +tup_sec;
-				fos.write(result.getBytes());
-				fos.write(" \r\n".getBytes());
-				fos.flush(); 
-				fos.close();
-			}
-			catch (Throwable t)
-			{
-				t.printStackTrace();
-			}
-		}
-	}
-
-	
-
 	private static final long serialVersionUID = 2296373075956453004L;
 	private long m_acked;
 	private SpoutOutputCollector m_collector;

@@ -6,10 +6,10 @@ import java.util.List;
 import moa.storm.topology.grouping.AllGrouping;
 import moa.storm.topology.grouping.IdBasedGrouping;
 import moa.storm.topology.meta.bolts.ClassifierBolt;
+import moa.storm.topology.meta.bolts.CombinerBolt;
 import moa.storm.topology.meta.bolts.TopologyBroadcastBolt;
 import moa.storm.topology.meta.bolts.WorkerBroadcastBolt;
 import performance.AllLocalGrouping;
-import performance.CombinerBolt;
 import performance.LocalGrouping;
 import weka.core.Instances;
 import backtype.storm.topology.IRichSpout;
@@ -19,14 +19,26 @@ public class MemoryOnlyOzaBag {
 
 	protected Instances m_header;
 	public static final List<String> FIELDS = Arrays.asList(new String[]{"instance"});
-	
+
+	public MemoryOnlyOzaBag() {
+		super();
+
+	}
+
 	public MemoryOnlyOzaBag(Instances header)
 	{
 		m_header = header;
+		
 	}
 
-	public void build(String classifier, TopologyBuilder builder, int ensemble_size, int num_workers,
-			int num_classifiers, int num_combiners, int num_aggregators, IRichSpout learn, IRichSpout predict) {
+	public void build(String classifier, TopologyBuilder builder, MoaConfig config, 
+				IRichSpout learn, IRichSpout predict) {
+		
+				int ensemble_size = config.getEnsembleSize();
+				int num_workers = config.getNumWorkers(); 
+				int num_classifiers = config.getNumClassifierExecutors();
+				int num_combiners = config.getNumCombiners();
+				int num_aggregators = config.getNumAggregators();
 				
 				builder.setSpout("prediction_stream", predict);
 				builder.setSpout("learner_stream", learn);
@@ -52,9 +64,5 @@ public class MemoryOnlyOzaBag {
 				
 			}
 
-	public MemoryOnlyOzaBag() {
-		super();
-
-	}
 
 }
