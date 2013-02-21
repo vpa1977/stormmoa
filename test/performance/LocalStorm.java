@@ -2,6 +2,8 @@ package performance;
 
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import moa.storm.kryo.WekaSerializers;
 import moa.storm.topology.grouping.IdBasedGrouping;
@@ -52,7 +54,8 @@ public class LocalStorm extends MemoryOnlyOzaBag implements Serializable {
 		build("trees.HoeffdingTree -m 10000000 -e 10000",
 				builder, conf, learn,predict);
 		
-		builder.setBolt("calculate_performance", new CounterBolt(),conf.getNumWorkers())
+		HashSet<String> track = new HashSet<String>();
+		builder.setBolt("calculate_performance", new CounterBolt(track),conf.getNumWorkers())
 			.customGrouping("prediction_result", new LocalGrouping(new IdBasedGrouping()));
 		
 		
