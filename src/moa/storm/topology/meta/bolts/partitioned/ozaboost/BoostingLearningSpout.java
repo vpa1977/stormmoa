@@ -1,9 +1,5 @@
 package moa.storm.topology.meta.bolts.partitioned.ozaboost;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

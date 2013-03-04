@@ -12,7 +12,7 @@ import storm.trident.TridentTopology;
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
 import backtype.storm.utils.NimbusClient;
-import backtype.storm.utils.Utils; 
+import backtype.storm.utils.Utils;
 
 public class Deploy {
 	

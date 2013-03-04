@@ -2,7 +2,6 @@ package performance;
 
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import moa.storm.kryo.WekaSerializers;
@@ -13,7 +12,6 @@ import moa.streams.generators.RandomTreeGenerator;
 
 import org.apache.log4j.Logger;
 
-import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;

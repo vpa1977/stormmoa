@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import moa.storm.persistence.IPersistentState;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.persistence.ensemble_members.EnsembleMember;
-
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
