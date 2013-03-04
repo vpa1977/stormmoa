@@ -40,8 +40,6 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 	private long m_pending;
 	private int m_key;
 
-	private Measurement m_measurement;
-
 	public LearnSpout(InstanceStreamSource stream_src, IStateFactory classifierState,
 			long pending) {
 		m_stream_src = stream_src;
@@ -93,11 +91,6 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 
 	@Override
 	public void ack(Object msgId) {
-		if (m_measurement == null)
-			m_measurement = new Measurement();
-		m_measurement.check();
-
-		super.ack(msgId);
 		MessageIdentifier msg = (MessageIdentifier) msgId;
 		if (msg.getTask() != NOTIFICATION_ID)
 		{
@@ -105,10 +98,11 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 			if (confirmedVersion % m_pending == 0) 
 			{
 				updateVersion(m_state, confirmedVersion);
-				m_measurement.write();
 			}
 			m_version++;
 		}
+		super.ack(msgId);
+
 	}
 
 	private void updateVersion(IPersistentState state, long l) {
@@ -126,69 +120,4 @@ public class LearnSpout extends BaseRichSpout implements IRichSpout {
 		declarer.declareStream(EVENT_STREAM,new Fields(LEARN_STREAM_FIELDS));
 		declarer.declareStream(NOTIFICATION_STREAM, new Fields(COMMAND_FIELD));
 	}
-	
-	
-	
-	class Measurement implements Serializable{
-		public Measurement()
-		{
-			m_start = System.currentTimeMillis();
-			count = 0;
-			
-		}
-		
-		private int getPid() throws Throwable
-		{
-			java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
-			java.lang.reflect.Field jvm = runtime.getClass().getDeclaredField("jvm");
-			jvm.setAccessible(true);
-			sun.management.VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-			java.lang.reflect.Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-			pid_method.setAccessible(true);
-			int pid = (Integer) pid_method.invoke(mgmt);
-			return pid;
-		}			
-
-		private void writeResult(long period)
-		{
-			try {
-				
-				long tup_sec = count * 100 * 1000 /period;
-				
-				File f = new File("/home/vp37/learn"+ InetAddress.getLocalHost().getHostName() + "-" + getPid());
-				FileOutputStream fos = new FileOutputStream(f);
-				String result = "" +tup_sec;
-				fos.write(result.getBytes());
-				fos.write(" \r\n".getBytes());
-				fos.flush(); 
-				fos.close();
-			}
-			catch (Throwable t)
-			{
-				t.printStackTrace();
-			}
-		}
-		
-		public void check()
-		{
-			if (m_start == 0 ) 
-				m_start = System.currentTimeMillis();
-
-			count ++;
-		}
-		public void write()
-		{
-			long current =System.currentTimeMillis();
-			if (current - m_start > 1000 * 60)
-			{
-				writeResult(current - m_start);
-				m_start = System.currentTimeMillis();
-				count = 0;
-			}  
-		}
-		
-		long m_start;
-		long count;
-	}
-	
 }

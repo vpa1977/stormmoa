@@ -10,6 +10,9 @@ import moa.core.SizeOf;
 import moa.storm.persistence.IPersistentState;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.message.EnsembleCommand;
+
+import org.apache.log4j.Logger;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
@@ -26,25 +29,30 @@ import backtype.storm.tuple.Tuple;
  */
 public class PartitionedSharedStorageBolt<T>  implements IRichBolt {
 	
-	private OutputCollector m_collector;
-	protected IPersistentState<T> m_state;
-	protected IStateFactory m_factory;
-	private String m_user_component;
-	private long m_ensemble_size;
-	private static ConcurrentHashMap<String,Object> m_data = new ConcurrentHashMap<String, Object>();
-	
-	private static PartitionedSharedStorageBolt m_instance;
-	protected ArrayList<Long> m_versions;
-	private long m_start_key;
-	private long m_partition_size;
-	
 	private class Partition implements Serializable 
 	{
-		long m_start;
 		long m_size;
+		long m_start;
 	}
+	
+	public static Logger LOG = Logger.getLogger(PartitionedSharedStorageBolt.class);
+	
+	private static ConcurrentHashMap<String,Object> m_data = new ConcurrentHashMap<String, Object>();
+	private static PartitionedSharedStorageBolt m_instance;
+	
+	private OutputCollector m_collector;
+	private long m_ensemble_size;
+	protected IStateFactory m_factory;
+	
+	private long m_partition_size;
 	private ArrayList<Partition> m_partitions;
+	private long m_start_key;
+	protected IPersistentState<T> m_state;
+	
+	private String m_user_component;
 
+	
+	protected ArrayList<Long> m_versions;
 	
 	public PartitionedSharedStorageBolt(int ensemble_size,IStateFactory factory, String user_component){
 		m_ensemble_size = ensemble_size;
@@ -60,6 +68,36 @@ public class PartitionedSharedStorageBolt<T>  implements IRichBolt {
 	}
 	
 	
+	private void clean(String key) {
+		for (int i = 0 ; i < m_versions.size() -1 ; i ++ )
+		{
+			m_data.remove(key+ String.valueOf(m_versions.get(i)));
+		}
+	}
+	
+	@Override
+	public void cleanup() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	}
+
+	@Override
+	public void execute(Tuple input) {
+		EnsembleCommand cmd = (EnsembleCommand)input.getValue(0);
+		long version_to_read = cmd.version();
+		try {
+			processVersion(version_to_read);
+			m_collector.ack(input);
+		}
+		catch (RuntimeException e){
+			m_collector.fail(input);
+		}
+	}
+
 	public T get(String key, long version)
 	{
 		T ret = (T)m_data.get(key + version);
@@ -69,20 +107,18 @@ public class PartitionedSharedStorageBolt<T>  implements IRichBolt {
 				System.out.println("Known key "+ s);
 			}
 			throw new RuntimeException("Unknown key "+ (key+version)+ " my size is "+ m_data.size());
-			
 		}
 		return ret;
 	}
-	
-	public void writeStorage(String key, long version, Object o)
-	{
-		m_state.put(key, String.valueOf(version), o);
+
+	@Override
+	public Map<String, Object> getComponentConfiguration() {
+		return null;
 	}
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context,
 			OutputCollector collector) {
-		// @TODO: check the 
 		m_collector =collector;
 		m_state = m_factory.create();
 		List<Integer> alltasks = context.getThisWorkerTasks();
@@ -128,19 +164,6 @@ public class PartitionedSharedStorageBolt<T>  implements IRichBolt {
 		m_versions = new ArrayList<Long>();
 	}
 
-	@Override
-	public void execute(Tuple input) {
-		EnsembleCommand cmd = (EnsembleCommand)input.getValue(0);
-		long version_to_read = cmd.version();
-		try {
-			processVersion(version_to_read);
-			m_collector.ack(input);
-		}
-		catch (RuntimeException e){
-			m_collector.fail(input);
-		}
-	}
-
 	public void processVersion(long version_to_read) {
 		// we may be asked to re-read same version, due to timeouts etc.
 		if (m_versions.size() > 0 && m_versions.get(m_versions.size()-1) == version_to_read)
@@ -177,26 +200,9 @@ public class PartitionedSharedStorageBolt<T>  implements IRichBolt {
 			throw new RuntimeException("Too many objects in the shared storage");
 	}
 
-	private void clean(String key) {
-		for (int i = 0 ; i < m_versions.size() -1 ; i ++ )
-		{
-			m_data.remove(key+ String.valueOf(m_versions.get(i)));
-		}
-	}
-
-	@Override
-	public void cleanup() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-	}
-
-	@Override
-	public Map<String, Object> getComponentConfiguration() {
-		return null;
+	public void write(String key, long version, Object o)
+	{
+		m_state.put(key, String.valueOf(version), o);
 	}
 
 }
