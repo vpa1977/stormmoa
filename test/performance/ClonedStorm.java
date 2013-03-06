@@ -10,6 +10,7 @@ import java.util.Map;
 import moa.storm.persistence.HDFSState;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.grouping.IdBasedGrouping;
+import moa.storm.topology.meta.MoaConfig;
 import moa.storm.topology.meta.OzaBag;
 import moa.streams.generators.RandomTreeGenerator;
 
@@ -123,7 +124,7 @@ public class ClonedStorm extends OzaBag implements Serializable {
 
 	}
 
-	public ClonedStorm(Config conf, String[] args) throws Throwable {
+	public ClonedStorm(String[] args) throws Throwable {
 
 		final int ensemble_size = Integer.parseInt(args[0]);
 		final int num_workers = Integer.parseInt(args[1]);
@@ -131,6 +132,13 @@ public class ClonedStorm extends OzaBag implements Serializable {
 		final int num_combiners = Integer.parseInt(args[3]);
 		final int num_aggregators = Integer.parseInt(args[4]);
 		final int num_pending = Integer.parseInt(args[5]);
+		
+		final MoaConfig config = new MoaConfig();
+		config.setEnsembleSize(ensemble_size);
+		config.setNumWorkers(num_workers);
+		config.setNumClassifierExecutors(num_classifiers);
+		config.setNumCombiners(num_combiners);
+		config.setNumAggregators(num_aggregators);
 
 		if ("true".equals(System.getProperty("localmode"))) {
 			MkClusterParam mkClusterParam = new MkClusterParam();
@@ -164,19 +172,18 @@ public class ClonedStorm extends OzaBag implements Serializable {
 
 					buildLearnPart(cassandra, moa_stream, builder,
 							"trees.HoeffdingTree -m 1000000 -e 10000",
-							num_workers, ensemble_size, num_classifiers);
+							config);
 					buildEvaluatePart(cassandra, evaluate_stream, builder,
-							num_workers, ensemble_size, num_classifiers,
-							num_classifiers, num_aggregators);
+							config);
 					builder.setBolt("calculate_performance", new CounterBolt(),
 							num_workers).customGrouping("aggregate_result",
 							new LocalGrouping(new IdBasedGrouping()));
 
-					Config conf = new Config();
-					conf.setNumAckers(num_workers);
-					conf.setNumWorkers(num_workers);
-					conf.setMaxSpoutPending(num_pending);
-					cluster.submitTopology("test", conf,
+					
+					config.setNumAckers(num_workers);
+					config.setNumWorkers(num_workers);
+					config.setMaxSpoutPending(num_pending);
+					cluster.submitTopology("test", config,
 							builder.createTopology());
 					Thread.sleep(10000000);
 				}
@@ -184,12 +191,12 @@ public class ClonedStorm extends OzaBag implements Serializable {
 			});
 		} else {
 
-			conf.setNumAckers(num_workers);
-			conf.setNumWorkers(num_workers);
-			conf.setMaxSpoutPending(num_pending);
-			conf.put("topology.worker.childopts",
+			config.setNumAckers(num_workers);
+			config.setNumWorkers(num_workers);
+			config.setMaxSpoutPending(num_pending);
+			config.put("topology.worker.childopts",
 					"-javaagent:/research/vp37/storm-0.8.2-wip8/lib/sizeofag-1.0.0.jar");
-			conf.put("topology.message.timeout.secs", 60);
+			config.put("topology.message.timeout.secs", 60);
 
 			// CassandraState.Options<String> options = new
 			// CassandraState.Options<String>();
@@ -213,32 +220,28 @@ public class ClonedStorm extends OzaBag implements Serializable {
 
 				buildLearnPart(cassandra, moa_stream, builder,
 						"trees.HoeffdingTree -m 10000000 -e 10000",
-						num_workers, ensemble_size, num_classifiers);
+						config);
 
 				StormSubmitter.submitTopology(
-						"learn" + System.currentTimeMillis(), conf,
+						"learn" + System.currentTimeMillis(), config,
 						builder.createTopology());
 			}
 
 			builder = new TopologyBuilder();
-			buildEvaluatePart(cassandra, evaluate_stream, builder, num_workers,
-					ensemble_size, num_classifiers, num_classifiers,
-					num_aggregators);
+			buildEvaluatePart(cassandra, evaluate_stream, builder, config);
 			builder.setBolt("calculate_performance", new CounterBolt(),
 					num_workers).customGrouping("aggregate_result",
 					new LocalGrouping(new IdBasedGrouping()));
 
 			StormSubmitter.submitTopology(
-					"evaluate" + System.currentTimeMillis(), conf,
+					"evaluate" + System.currentTimeMillis(), config,
 					builder.createTopology());
 
 		}
 	}
 
 	public static void main(String[] args) throws Throwable {
-
-		Config conf = new Config();
-		ClonedStorm storm = new ClonedStorm(conf, args);
+		ClonedStorm storm = new ClonedStorm(args);
 	}
 
 }

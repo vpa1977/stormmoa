@@ -7,6 +7,7 @@ import java.util.HashMap;
 import moa.storm.persistence.HDFSState;
 import moa.storm.persistence.IStateFactory;
 import moa.storm.topology.grouping.IdBasedGrouping;
+import moa.storm.topology.meta.MoaConfig;
 import moa.streams.generators.RandomTreeGenerator;
 import performance.LocalGrouping;
 import performance.MOAStreamSpout;
@@ -23,7 +24,7 @@ import backtype.storm.topology.TopologyBuilder;
 public class EvaluateBaggedStorm extends BagPartitionStorm implements Serializable {
 
 	
-	public EvaluateBaggedStorm(Config conf,String[] args) throws Throwable
+	public EvaluateBaggedStorm(final MoaConfig conf,String[] args) throws Throwable
 	{
 		
 		super();
@@ -35,6 +36,11 @@ public class EvaluateBaggedStorm extends BagPartitionStorm implements Serializab
 		final int num_aggregators = Integer.parseInt(args[4]);
 		final int num_pending = Integer.parseInt(args[5]);
 		
+		conf.setEnsembleSize(ensemble_size);
+		conf.setNumWorkers(num_workers);
+		conf.setNumClassifierExecutors(num_classifiers);
+		conf.setNumCombiners(num_combiners);
+		conf.setNumAggregators(num_aggregators);
 		
 		if ("true".equals(System.getProperty("localmode")))
 		{
@@ -72,7 +78,7 @@ public class EvaluateBaggedStorm extends BagPartitionStorm implements Serializab
 					stream.prepareForUse();
 					MOAStreamSpout evaluate_stream = new MOAStreamSpout(stream, 0);
 					
-					buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree -m 1000000 -e 10000", num_workers, ensemble_size, num_classifiers);
+					buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree -m 1000000 -e 10000", conf);
 //					buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
 					//builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
 					
@@ -118,7 +124,7 @@ public class EvaluateBaggedStorm extends BagPartitionStorm implements Serializab
 				
 //				StormSubmitter.submitTopology("learn"+ System.currentTimeMillis(), conf, builder.createTopology());
 			builder = new TopologyBuilder();
-			buildEvaluatePart(cassandra,evaluate_stream, builder, num_workers, ensemble_size, num_classifiers, num_classifiers, num_aggregators);
+			buildEvaluatePart(cassandra,evaluate_stream, builder, conf);
 			builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
 			StormSubmitter.submitTopology("evaluate"+ System.currentTimeMillis(), conf, builder.createTopology());
 
@@ -131,7 +137,7 @@ public class EvaluateBaggedStorm extends BagPartitionStorm implements Serializab
 	public static void main(String[] args) throws Throwable
 	{
 		
-		Config conf = new Config();
+		MoaConfig conf = new MoaConfig();
 		new EvaluateBaggedStorm(conf,args);
 	}
 
