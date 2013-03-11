@@ -99,7 +99,7 @@ public class OzaBag implements Serializable {
 						new LocalGrouping(new IdBasedGrouping()))
 				.setNumTasks(Math.max(num_workers, num_combiners));
 
-		builder.setBolt("aggregate_result", new CombinerBolt(ensemble_size),
+		builder.setBolt("prediction_result", new CombinerBolt(ensemble_size),
 				Math.max(num_workers, num_combiners))
 				.customGrouping("combine_result", new IdBasedGrouping())
 				.setNumTasks(Math.max(num_workers, num_aggregators));

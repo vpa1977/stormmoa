@@ -190,7 +190,7 @@ public class BagPartitionStorm extends PartitionedOzaBag implements Serializable
 					
 					buildLearnPart(cassandra,moa_stream, builder,"trees.HoeffdingTree -m 1000000 -e 10000",conf);
 					buildEvaluatePart(cassandra,evaluate_stream, builder, conf);
-					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("prediction_result", new LocalGrouping(new IdBasedGrouping()));		
 					
 					
 					Config conf = new Config();
@@ -238,7 +238,7 @@ public class BagPartitionStorm extends PartitionedOzaBag implements Serializable
 				{
 					builder = new TopologyBuilder();
 					buildEvaluatePart(cassandra,evaluate_stream, builder, conf);
-					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("prediction_result", new LocalGrouping(new IdBasedGrouping()));		
 					StormSubmitter.submitTopology("evaluate"+ System.currentTimeMillis(), conf, builder.createTopology());
 				}
 			

@@ -146,6 +146,12 @@ public class BoostPartitionStorm extends PartitionedOzaBoost implements Serializ
 		final int num_aggregators = Integer.parseInt(args[4]);
 		final int num_pending = Integer.parseInt(args[5]);
 		
+		conf.setEnsembleSize(ensemble_size);
+		conf.setNumWorkers(num_workers);
+		conf.setNumClassifierExecutors(num_classifiers);
+		conf.setNumCombiners(num_combiners);
+		conf.setNumAggregators(num_aggregators);
+		
 		
 		if ("true".equals(System.getProperty("localmode")))
 		{
@@ -233,7 +239,7 @@ public class BoostPartitionStorm extends PartitionedOzaBoost implements Serializ
 				{
 					builder = new TopologyBuilder();
 					buildEvaluatePart(cassandra,evaluate_stream, builder, conf);
-					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+					builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("prediction_result", new LocalGrouping(new IdBasedGrouping()));		
 					StormSubmitter.submitTopology("evaluate"+ System.currentTimeMillis(), conf, builder.createTopology());
 				}
 			

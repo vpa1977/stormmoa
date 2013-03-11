@@ -176,7 +176,7 @@ public class ClonedStorm extends OzaBag implements Serializable {
 					buildEvaluatePart(cassandra, evaluate_stream, builder,
 							config);
 					builder.setBolt("calculate_performance", new CounterBolt(),
-							num_workers).customGrouping("aggregate_result",
+							num_workers).customGrouping("prediction_result",
 							new LocalGrouping(new IdBasedGrouping()));
 
 					

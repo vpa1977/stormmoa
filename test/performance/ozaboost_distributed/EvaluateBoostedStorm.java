@@ -120,7 +120,7 @@ public class EvaluateBoostedStorm extends BoostPartitionStorm implements Seriali
 //				StormSubmitter.submitTopology("learn"+ System.currentTimeMillis(), conf, builder.createTopology());
 			builder = new TopologyBuilder();
 			buildEvaluatePart(cassandra,evaluate_stream, builder, conf);
-			builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("aggregate_result", new LocalGrouping(new IdBasedGrouping()));		
+			builder.setBolt("calculate_performance", new CounterBolt(),num_workers).customGrouping("prediction_result", new LocalGrouping(new IdBasedGrouping()));		
 			StormSubmitter.submitTopology("evaluate"+ System.currentTimeMillis(), conf, builder.createTopology());
 
 			
