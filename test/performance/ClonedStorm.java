@@ -178,7 +178,6 @@ public class ClonedStorm extends OzaBag implements Serializable {
 					builder.setBolt("calculate_performance", new CounterBolt(),
 							num_workers).customGrouping("prediction_result",
 							new LocalGrouping(new IdBasedGrouping()));
-
 					
 					config.setNumAckers(num_workers);
 					config.setNumWorkers(num_workers);

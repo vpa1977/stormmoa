@@ -17,6 +17,11 @@ import backtype.storm.topology.TopologyBuilder;
 
 public class MemoryOnlyOzaBag {
 
+	private static final String DESERIALIZE = "deserialize";
+	private static final String EVALUATE = "evaluate";
+	private static final String P_DESERIALIZE = "p_deserialize";
+	private static final String LEARNER_STREAM = "learner_stream";
+	private static final String PREDICTION_STREAM = "prediction_stream";
 	protected Instances m_header;
 	public static final List<String> FIELDS = Arrays
 			.asList(new String[] { "instance" });
@@ -40,29 +45,29 @@ public class MemoryOnlyOzaBag {
 		int num_combiners = config.getNumCombiners();
 		int num_aggregators = config.getNumAggregators();
 
-		builder.setSpout("prediction_stream", predict);
-		builder.setSpout("learner_stream", learn);
+		builder.setSpout(PREDICTION_STREAM, predict);
+		builder.setSpout(LEARNER_STREAM, learn);
 
-		builder.setBolt("p_deserialize",
-				new TopologyBroadcastBolt("evaluate", FIELDS), num_workers)
-				.shuffleGrouping("prediction_stream");
-		builder.setBolt("deserialize",
+		builder.setBolt(P_DESERIALIZE,
+				new TopologyBroadcastBolt(EVALUATE, FIELDS), num_workers)
+				.shuffleGrouping(PREDICTION_STREAM);
+		builder.setBolt(DESERIALIZE,
 				new TopologyBroadcastBolt("learn", FIELDS), num_workers)
-				.shuffleGrouping("learner_stream");
+				.shuffleGrouping(LEARNER_STREAM);
 
 		builder.setBolt("evaluate_local_grouping",
-				new WorkerBroadcastBolt("evaluate", FIELDS), num_workers)
-				.customGrouping("p_deserialize", "evaluate", new AllGrouping());
+				new WorkerBroadcastBolt(EVALUATE, FIELDS), num_workers)
+				.customGrouping(P_DESERIALIZE, EVALUATE, new AllGrouping());
 
 		builder.setBolt("learn_local_grouping",
 				new WorkerBroadcastBolt("learn", FIELDS), num_workers)
-				.customGrouping("deserialize", "learn", new AllGrouping());
+				.customGrouping(DESERIALIZE, "learn", new AllGrouping());
 
 		builder.setBolt("classifier_instance",
 				new ClassifierBolt(classifier, m_header),
 				Math.max(num_classifiers, num_workers))
 				.setNumTasks(ensemble_size)
-				.customGrouping("evaluate_local_grouping", "evaluate",
+				.customGrouping("evaluate_local_grouping", EVALUATE,
 						new AllLocalGrouping())
 				.customGrouping("learn_local_grouping", "learn",
 						new AllLocalGrouping());
